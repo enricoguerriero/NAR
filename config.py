@@ -47,4 +47,18 @@ CONFIG = {
 
         Respond clearly based on what is visible in the image. Use concise and structured output when possible.
         """,
+        
+    # training specific
+    "batch_size": 8,
+    "optimizer": "adamw",
+    "learning_rate": 0.001,
+    "momentum": 0.9,
+    "weight_decay": 0.01,
+    "criterion": "wce",
+    "scheduler": "reduceonplateau",
+    "patience": 5,
+    "epochs": 20,
+    "threshold": 0.5,
+    "num_workers": 4
+    
 }

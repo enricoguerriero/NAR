@@ -6,8 +6,8 @@ import cv2
 import numpy as np
 import torch
 import glob
-from torch.utils.data import Dataset, DataLoader
-
+from torch.utils.data import DataLoader
+from sklearn.metrics import precision_recall_fscore_support
 
 class BaseModel(nn.Module):
     """
@@ -82,8 +82,32 @@ class BaseModel(nn.Module):
         """
         self.pos_weights = weights
         
+    def save_model(self):
+        """
+        Save the model to a file.
+        """
+        model_path = os.path.join("models/saved", self.model_name)
+        os.makedirs(model_path, exist_ok=True)
+        torch.save(self.state_dict(), os.path.join(model_path, "model.pth"))   
+    
+    def save_checkpoint(self, epoch, optimizer, scheduler):
+        """
+        Save the model checkpoint.
+        """
+        checkpoint_path = os.path.join("models/saved", self.model_name, "checkpoints")
+        os.makedirs(checkpoint_path, exist_ok=True)
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': self.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+        }, os.path.join(checkpoint_path, f"checkpoint_{epoch}.pth"))     
         
-    def define_optimizer(self, optimizer_name, learning_rate, momentum = None, weight_decay = None):
+    def define_optimizer(self, 
+                         optimizer_name: str, 
+                         learning_rate: float,
+                         momentum: float = None,
+                         weight_decay: float = None):
         """
         Defines the optimizer for the model.
         By now you can choose between Adam and SGD.
@@ -101,7 +125,9 @@ class BaseModel(nn.Module):
             raise ValueError(f"Optimizer {optimizer_name} not available")
         return optimizer
     
-    def define_criterion(self, criterion_name, pos_weight=None, neg_weight=None):
+    def define_criterion(self, 
+                         criterion_name: str, 
+                         pos_weight: torch.Tensor = None):
         """
         Defines the criterion for the model.
         By now you can choose between BCE and CrossEntropy.
@@ -115,6 +141,30 @@ class BaseModel(nn.Module):
         else:
             raise ValueError(f"Criterion {criterion_name} not available")
         return criterion
+    
+    def define_scheduler(self, 
+                         scheduler_name: str, 
+                         optimizer: torch.optim.Optimizer = None,
+                         epochs: int = None, 
+                         patience: int = None,
+                         step_size: int = 5, 
+                         gamma: float = 0.1,
+                         eta_min: float = 0,
+                         factor: float = 0.1,
+                         mode: str = "min"):
+        """
+        Defines the scheduler for the model.
+        By now you can choose between StepLR and CosineAnnealingLR.
+        """
+        if scheduler_name == "steplr":
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+        elif scheduler_name == "cosineannealinglr":
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=eta_min)
+        elif scheduler_name == "reduceonplateau":
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode=mode, factor=factor, patience=patience)
+        else:
+            raise ValueError(f"Scheduler {scheduler_name} not available")
+        return scheduler
 
     def export_tokens(self, 
                       video_folder: str, 
@@ -270,4 +320,128 @@ class BaseModel(nn.Module):
                 labels[i] = 1
 
         return labels
+    
+    def metric_computation(self,
+                        logits: torch.Tensor,
+                        labels: torch.Tensor,
+                        threshold: float = 0.5):
+        """
+        Compute confusion-matrix counts (TP, FP, TN, FN) and derived metrics for
+        a *multi-label* task.
 
+        Parameters
+        ----------
+        logits : FloatTensor,  shape = (batch, n_classes)
+            Raw model scores.
+        labels : FloatTensor / LongTensor, shape = (batch, n_classes)
+            Binary ground-truth indicators (0/1).
+        threshold : float
+            Decision cutoff after sigmoid.
+
+        Returns
+        -------
+        dict
+            Keys:
+                TP, FP, FN, TN                - np.ndarray[n_classes]
+                accuracy, precision, recall,
+                f1                             - np.ndarray[n_classes]
+                accuracy_macro, precision_macro,
+                recall_macro, f1_macro         - scalars
+        """
+
+        preds = (logits.sigmoid() >= threshold).to(labels.dtype)
+
+        TP = (preds &  labels).sum(dim=0).cpu().numpy()
+        FP = (preds & ~labels).sum(dim=0).cpu().numpy()
+        FN = (~preds &  labels).sum(dim=0).cpu().numpy()
+        TN = (~preds & ~labels).sum(dim=0).cpu().numpy()
+
+        total = TP + FP + FN + TN
+        acc_per_class = (TP + TN) / total.clip(min=1)
+
+        p, r, f1, _ = precision_recall_fscore_support(
+            labels.cpu().numpy(),
+            preds.cpu().numpy(),
+            average=None,
+            zero_division=0
+        )
+
+        metrics = {
+            "TP": TP, "FP": FP, "FN": FN, "TN": TN,
+            "accuracy":  acc_per_class,
+            "precision": p,
+            "recall":    r,
+            "f1":        f1,
+            "accuracy_macro":  acc_per_class.mean().item(),
+            "precision_macro": p.mean().item(),
+            "recall_macro":    r.mean().item(),
+            "f1_macro":        f1.mean().item()
+        }
+        return metrics
+
+    def log_wandb(self, wandb, epoch, train_loss, train_metrics, val_loss=None, val_metrics=None):
+        """
+        Log the training and validation metrics to Weights & Biases.
+        """
+        class_names = ["Baby visible", "Ventilation", "Stimulation", "Suction"]
+        final_log = {}
+        
+        for i, class_name in enumerate(class_names):
+            matrix = np.array([
+                [train_metrics["TN"][i], train_metrics["FP"][i]],
+                [train_metrics["FN"][i], train_metrics["TP"][i]]
+            ])
+            final_log[f"train/{class_name}/Confusion_matrix"] = wandb.Image(matrix, caption=f"Confusion matrix for {class_name}")
+            final_log[f"train/{class_name}/accuracy"] = train_metrics["accuracy"][i]
+            final_log[f"train/{class_name}/precision"] = train_metrics["precision"][i]
+            final_log[f"train/{class_name}/recall"] = train_metrics["recall"][i]
+            final_log[f"train/{class_name}/f1"] = train_metrics["f1"][i]
+            
+            if val_metrics is not None:
+                matrix = np.array([
+                    [val_metrics["TN"][i], val_metrics["FP"][i]],
+                    [val_metrics["FN"][i], val_metrics["TP"][i]]
+                ])
+                final_log[f"val/{class_name}/Confusion_matrix"] = wandb.Image(matrix, caption=f"Confusion matrix for {class_name}")
+                final_log[f"val/{class_name}/accuracy"] = val_metrics["accuracy"][i]
+                final_log[f"val/{class_name}/precision"] = val_metrics["precision"][i]
+                final_log[f"val/{class_name}/recall"] = val_metrics["recall"][i]
+                final_log[f"val/{class_name}/f1"] = val_metrics["f1"][i]
+        final_log["epoch"] = epoch
+        final_log["train/loss"] = train_loss
+        if val_loss is not None:
+            final_log["val/loss"] = val_loss
+        final_log["train/accuracy_macro"] = train_metrics["accuracy_macro"]
+        final_log["train/precision_macro"] = train_metrics["precision_macro"]
+        final_log["train/recall_macro"] = train_metrics["recall_macro"]
+        final_log["train/f1_macro"] = train_metrics["f1_macro"]
+        if val_metrics is not None:
+            final_log["val/accuracy_macro"] = val_metrics["accuracy_macro"]
+            final_log["val/precision_macro"] = val_metrics["precision_macro"]
+            final_log["val/recall_macro"] = val_metrics["recall_macro"]
+            final_log["val/f1_macro"] = val_metrics["f1_macro"]
+        wandb.log(final_log, step=epoch)
+
+    def log_test_wandb(self, wandb, test_metrics, test_loss=None):
+        """
+        Log the test metrics to Weights & Biases.
+        """
+        class_names = ["Baby visible", "Ventilation", "Stimulation", "Suction"]
+        final_log = {}
+        for i, class_name in enumerate(class_names):
+            matrix = np.array([
+                [test_metrics["TN"][i], test_metrics["FP"][i]],
+                [test_metrics["FN"][i], test_metrics["TP"][i]]
+            ])
+            final_log[f"test/{class_name}/Confusion_matrix"] = wandb.Image(matrix, caption=f"Confusion matrix for {class_name}")
+            final_log[f"test/{class_name}/accuracy"] = test_metrics["accuracy"][i]
+            final_log[f"test/{class_name}/precision"] = test_metrics["precision"][i]
+            final_log[f"test/{class_name}/recall"] = test_metrics["recall"][i]
+            final_log[f"test/{class_name}/f1"] = test_metrics["f1"][i]
+        final_log["test/accuracy_macro"] = test_metrics["accuracy_macro"]
+        final_log["test/precision_macro"] = test_metrics["precision_macro"]
+        final_log["test/recall_macro"] = test_metrics["recall_macro"]
+        final_log["test/f1_macro"] = test_metrics["f1_macro"]
+        if test_loss is not None:
+            final_log["test/loss"] = test_loss
+        wandb.log(final_log)

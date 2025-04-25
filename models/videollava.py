@@ -1,12 +1,15 @@
 import torch
 import torch.nn as nn
-from transformers import VideoLlavaForConditionalGeneration, VideoLlavaProcessor, TrainingArguments, Trainer
+from transformers import VideoLlavaForConditionalGeneration, VideoLlavaProcessor
 from models.basemodel import BaseModel
 from torch.utils.data import DataLoader
 import numpy as np
 from sklearn.metrics import precision_recall_fscore_support
 from tqdm import tqdm
 import os
+from torch.optim import Optimizer, lr_scheduler
+from torch.amp import autocast, GradScaler
+from torch.nn.utils import clip_grad_norm_
 
 class VideoLlava(BaseModel):
     def __init__(self, checkpoint_path: str = None, base_model_id: str = "LanguageBind/Video-LLaVA-7B-hf", device=None, num_classes=4):
@@ -111,5 +114,156 @@ class VideoLlava(BaseModel):
         last_layer = outputs.hidden_states[-1]
         pooled = last_layer[:, 0, :]  # CLS token representation
         return pooled.float()
-    
  
+    def train_classifier_epoch(self, dataloader, optimizer, loss_fct, max_grad_norm=1.0):
+        """
+        Train the classifier for one epoch.
+        """
+        self.classifier.train()
+        total_loss = 0.0
+        total_samples = 0
+        labels_list = []
+        logits_list = []
+        scaler  = GradScaler()
+        
+        for batch in tqdm(dataloader, desc="Training Classifier", unit="batch"):
+            optimizer.zero_grad()
+            inputs = {k: v.to(self.device) for k, v in batch.items()}
+            labels = inputs.pop("labels")
+            with autocast():
+                outputs = self.forward_classifier(**inputs, loss_fct=loss_fct)
+            loss = outputs["loss"]
+            logits = outputs["logits"]
+            labels_list.append(labels)
+            logits_list.append(logits)
+            
+            if loss is not None:
+                scaler.scale(loss).backward()
+                scaler.unscale_(optimizer)
+                clip_grad_norm_(self.parameters(), max_grad_norm)
+                scaler.step(optimizer)
+                scaler.update()
+                total_loss += loss.item() * labels.size(0)
+                total_samples += labels.size(0)
+        
+        logits_tensor = torch.cat(logits_list)
+        labels_tensor = torch.cat(labels_list)
+        avg_loss = total_loss / total_samples if total_samples > 0 else 0.0
+        return avg_loss, logits_tensor, labels_tensor
+    
+    def eval_classifier_epoch(self, dataloader, loss_fct):
+        """
+        Evaluate the classifier for one epoch.
+        """
+        self.classifier.eval()
+        total_loss = 0.0
+        total_samples = 0
+        labels_list = []
+        logits_list = []
+        
+        with torch.no_grad():
+            for batch in tqdm(dataloader, desc="Evaluating Classifier", unit="batch"):
+                inputs = {k: v.to(self.device) for k, v in batch.items()}
+                labels = inputs.pop("labels")
+                
+                outputs = self.forward_classifier(**inputs, loss_fct=loss_fct)
+                loss = outputs["loss"]
+                logits = outputs["logits"]
+                labels_list.append(labels)
+                logits_list.append(logits)
+                
+                if loss is not None:
+                    total_loss += loss.item() * labels.size(0)
+                    total_samples += labels.size(0)
+        
+        logits_tensor = torch.cat(logits_list)
+        labels_tensor = torch.cat(labels_list)
+        avg_loss = total_loss / total_samples if total_samples > 0 else 0.0
+        return avg_loss, logits_tensor, labels_tensor
+        
+    def train_classifier(
+        self,
+        train_dataloader: DataLoader,
+        val_dataloader: DataLoader | None = None,
+        epochs: int = 5,
+        optimizer: Optimizer = None,
+        criterion: nn.Module = None,
+        threshold: float = 0.5,
+        scheduler: lr_scheduler = None,
+        patience: int = 3,
+        show_progress: bool = True,
+        wandb=None
+    ):
+        self.classifier.to(self.device)
+        best_val_loss = float('inf')
+        no_improve = 0
+
+        epo_iter = range(1, epochs + 1)
+        if show_progress:
+            epo_iter = tqdm(epo_iter, desc="Epochs", unit="epoch")
+
+        for epoch in epo_iter:
+            train_loss, logits, labels = self.train_classifier_epoch(train_dataloader, optimizer, criterion)
+
+            log_msg = f"[{epoch:02d}/{epochs}] train-loss: {train_loss:.4f}"
+            train_metrics = self.metric_computation(logits, labels, threshold)
+            log_msg += f" | train-f1: {train_metrics['f1_macro']:.4f}"
+
+            if val_dataloader is not None:
+                val_loss, val_logits, val_labels = self.eval_classifier_epoch(val_dataloader, criterion)
+                
+                log_msg += f" | val-loss: {val_loss:.4f}"
+                val_metrics = self.metric_computation(val_logits, val_labels, threshold)
+                log_msg += f" | val-f1: {val_metrics["f1_macro"]:.4f}"
+
+            if scheduler is not None:
+                if isinstance(scheduler, lr_scheduler.ReduceLROnPlateau):
+                    scheduler.step(val_loss)
+                else:
+                    scheduler.step()
+            if show_progress:
+                epo_iter.set_postfix_str(log_msg)
+            if wandb is not None:
+                self.log_wandb(wandb = wandb, 
+                               epoch = epoch, 
+                               train_loss = train_loss, 
+                               train_metrics = train_metrics, 
+                               val_loss = val_loss if val_dataloader is not None else None,
+                               val_metrics = val_metrics if val_dataloader is not None else None)
+            self.save_checkpoint(epoch = epoch,
+                                 optimizer = optimizer,
+                                 scheduler = scheduler)
+            
+            if val_dataloader is not None and val_loss < best_val_loss:
+                best_val_loss = val_loss
+                no_improve = 0
+            else:
+                no_improve += 1
+                if no_improve >= patience:
+                    print(f"Early stopping at epoch {epoch} with patience {patience}.")
+                    break
+
+        results = {"train_loss": train_loss,
+                   "train_metrics": train_metrics,
+                   "val_loss": val_loss if val_dataloader is not None else None,
+                   "val_metrics": val_metrics if val_dataloader is not None else None}
+
+        return results
+    
+    def test_classifier(
+        self,
+        test_dataloader: DataLoader,
+        threshold: float = 0.5,
+        wandb=None
+    ):
+        self.classifier.to(self.device)
+        test_loss, logits, labels = self.eval_classifier_epoch(test_dataloader, None)
+        
+        test_metrics = self.metric_computation(logits, labels, threshold)        
+        
+        if wandb is not None:
+            self.log_test_wandb(wandb = wandb, 
+                           test_loss = test_loss, 
+                           test_metrics = test_metrics)
+
+        return {"test_loss": test_loss, "test_metrics": test_metrics}
