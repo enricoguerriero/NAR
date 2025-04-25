@@ -43,7 +43,7 @@ def main():
     
     if export_tokens:
         logger.info("Exporting tokens ...")
-        for split in ["train", "eval", "test"]:
+        for split in ["train", "validation", "test"]:
             logger.info(f"Exporting tokens for {split} ...")
             model.export_tokens(video_folder = os.path.join(CONFIG["video_folder"], model.model_name, split),
                                 annotation_folder = os.path.join(CONFIG["annotation_folder"], model.model_name, split),
@@ -61,7 +61,7 @@ def main():
         logger.info("Exporting features ...")
         logger.info("Token dataset creation ...")
         from data.token_dataset import TokenDataset
-        for split in ["train", "eval", "test"]:
+        for split in ["train", "validation", "test"]:
             logger.info(f"Creating token dataset for {split} ...")
             dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], model.model_name, split))
             data_loader = DataLoader(dataset, batch_size = CONFIG["batch_size_feature"], shuffle = False, num_workers = 4)

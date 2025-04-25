@@ -41,7 +41,7 @@ def setup_logging(model_name: str):
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     
-    handler = logging.FileHandler(f"{model_name}.log")
+    handler = logging.FileHandler(f"logs/{model_name}.log")
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(formatter)
     
