@@ -267,3 +267,52 @@ class VideoLlava(BaseModel):
                            test_metrics = test_metrics)
 
         return {"test_loss": test_loss, "test_metrics": test_metrics}
+
+    @torch.no_grad()
+    def generate(
+        self,
+        video: list,                       
+        question: str,
+        system_message: str = "You are a helpful assistant.",
+        max_new_tokens: int = 128,
+        **generate_kwargs,
+    ) -> str:
+        """
+        Traditional generative usage of Video-LLaVA (zero-shot).
+
+        Args:
+            video: list of frames or a video file path the processor can read.
+            question: the user question about the clip.
+            system_message: high-level system instruction to prepend.
+            max_new_tokens: length of the answer to generate.
+            **generate_kwargs: any other `generate` kwargs (e.g. temperature, top_p).
+
+        Returns:
+            A single decoded answer string.
+        """
+        # Build V-LLaVA prompt and tokenize
+        prompt = self.prompt_definition(question, system_message)
+        inputs = self.processor(
+            text=prompt,
+            videos=video,
+            padding=True,
+            return_tensors="pt",
+        )
+
+        # Move everything to the right device / dtype
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+        # Generate
+        self.backbone.eval()
+        generated_ids = self.backbone.generate(
+            pixel_values_videos=inputs["pixel_values_videos"],
+            input_ids=inputs["input_ids"],
+            attention_mask=inputs["attention_mask"],
+            max_new_tokens=max_new_tokens,
+            **generate_kwargs,
+        )
+
+        # Decode
+        answer = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        # The answer often comes after the original prompt – strip it if desired
+        return answer.split("ASSISTANT:")[-1].strip()
