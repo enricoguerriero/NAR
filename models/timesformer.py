@@ -45,6 +45,7 @@ class TimeSformer(BaseModel):
         labels = labels.to(self.device) if labels is not None else None
         outputs = self.backbone(pixel_values)
         logits = outputs.logits
+        logits = logits.to(self.device)
         loss = None
         if labels is not None and loss_fct is not None:
             loss = loss_fct(logits, labels.float())
