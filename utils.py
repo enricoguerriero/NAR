@@ -67,4 +67,6 @@ def setup_wandb(model_name: str, config: dict):
     return run
 
 def collate_fn(batch):
-    return {key: torch.stack([item[key] for item in batch]) for key in batch[0]}
+    pv = torch.cat([item["pixel_values"] for item in batch], dim=0)  # merges the 1-dim into B
+    lbl = torch.stack([item["labels"] for item in batch], dim=0)
+    return {"pixel_values": pv, "labels": lbl}
