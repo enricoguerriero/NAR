@@ -51,8 +51,8 @@ def main():
         logger.info("Exporting tokens ...")
         for split in ["train", "validation", "test"]:
             logger.info(f"Exporting tokens for {split} ...")
-            model.export_tokens(video_folder = os.path.join(CONFIG["video_folder"], model.model_name, split),
-                                annotation_folder = os.path.join(CONFIG["annotation_folder"], model.model_name, split),
+            model.export_tokens(video_folder = os.path.join(CONFIG["video_folder"], split),
+                                annotation_folder = os.path.join(CONFIG["annotation_folder"], split),
                                 output_folder = os.path.join(CONFIG["token_dir"], model.model_name, split),
                                 clip_length = CONFIG["clip_length"],
                                 overlapping = CONFIG["overlapping"],
