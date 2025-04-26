@@ -40,7 +40,7 @@ def main():
     
     wandb_run = setup_wandb(model_name, CONFIG)
     logger.info(f"WandB run initialized: {wandb_run}")
-    logger.info(f"Config: {CONFIG}")
+    # logger.info(f"Config: {CONFIG}")
     logger.info("-" * 20)
     
     model = load_model(model_name, checkpoint)

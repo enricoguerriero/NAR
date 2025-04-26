@@ -18,8 +18,8 @@ def load_model(model_name: str, checkpoint: str):
         raise FileNotFoundError(f"Checkpoint file {checkpoint} does not exist.")
     
     if model_name == "VideoLLaVA":
-        from models.videollava import VideoLLaVA
-        model = VideoLLaVA(checkpoint=checkpoint)
+        from models.videollava import VideoLlava
+        model = VideoLlava(checkpoint=checkpoint)
     elif model_name == "SmolVLM":
         from models.smolvlm import SmolVLM
         model = SmolVLM(checkpoint=checkpoint)
