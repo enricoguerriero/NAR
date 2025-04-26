@@ -115,8 +115,10 @@ def main():
         except Exception as e:
             raise ValueError(f"Failed to parse JSON from model output: {out}") from e
     
-    correct_answers = [0,0,0,0]
-    total_per_class = [0,0,0,0]
+    TP = [0, 0, 0, 0]
+    FP = [0, 0, 0, 0]
+    TN = [0, 0, 0, 0]
+    FN = [0, 0, 0, 0]
     total_counter = 0
     # Test the model
     logger.info("Starting model testing.")
@@ -145,18 +147,54 @@ def main():
 
         for j in range(4):
             if predicted_labels_list[j] == real_labels[j]:
-                correct_answers[j] += 1
+                if predicted_labels_list[j] == 1:
+                    TP[j] += 1
+                else:
+                    TN[j] += 1
+            else:
+                if predicted_labels_list[j] == 1:
+                    FP[j] += 1
+                else:
+                    FN[j] += 1
         total_counter += 1
     
     logger.info("Model testing complete.")
-    logger.info(f"Correct answers: {correct_answers} / {total_counter}")
+    logger.info(f"Total clips: {total_counter}")
+    logger.info(f"TP: {TP}")
+    logger.info(f"FP: {FP}")
+    logger.info(f"TN: {TN}")
+    logger.info(f"FN: {FN}")
     
     # Compute metrics per class
     metrics = {}
     for i, label in enumerate(LABELS):
+        TP_i = TP[i]
+        FP_i = FP[i]
+        TN_i = TN[i]
+        FN_i = FN[i]
+        
+        accuracy = (TP_i + TN_i) / total_counter if total_counter > 0 else 0
+        precision = TP_i / (TP_i + FP_i) if (TP_i + FP_i) > 0 else 0
+        recall = TP_i / (TP_i + FN_i) if (TP_i + FN_i) > 0 else 0
+        f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        
+        metrics[label] = {
+            "TP": TP_i,
+            "FP": FP_i,
+            "TN": TN_i,
+            "FN": FN_i,
+            "Accuracy": accuracy,
+            "Precision": precision,
+            "Recall": recall,
+            "F1 Score": f1_score
+        }
         
     # log on wandb
-    
+    wandb_run.log({"metrics": metrics})
+    wandb_run.finish()
+    logger.info("Metrics logged to Weights & Biases.")
+    logger.info("0-shot test script complete.")
+    logger.info("Bye bye!")
     
 if __name__ == "__main__":
     main()
