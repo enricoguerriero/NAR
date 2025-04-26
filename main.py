@@ -144,3 +144,7 @@ def main():
     logger.info("Code finished.")
     logger.info("Bye bye!")
     logger.info("-" * 20)
+    
+    
+if __name__ == "__main__":
+    main()
