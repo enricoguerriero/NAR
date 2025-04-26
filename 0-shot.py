@@ -15,6 +15,8 @@ from transformers import (
 import torch
 import json
 from tqdm import tqdm
+from huggingface_hub import login
+from dotenv import load_dotenv
 
 def main():
     
@@ -32,6 +34,10 @@ def main():
     logger.info("Starting 0 shot test script.")
     logger.info(f"Model name: {model_name}")
     logger.info(f"Export tokens: {export_tokens}")
+    
+    load_dotenv()
+    hf_token = os.getenv("HUGGINGFACE_TOKEN")
+    login(hf_token)
     
     # Set up Weights & Biases
     config = {
