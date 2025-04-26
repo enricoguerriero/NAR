@@ -36,6 +36,7 @@ def save_clips_as_visuals(
             continue
 
         clip: torch.Tensor = data[tensor_key]  # Expect shape [T, C, H, W]
+        clip = clip.squeeze(0)  # Remove batch dimension if present
         # Move to CPU and convert to numpy (T, H, W, C)
         frames = clip.cpu().permute(0, 2, 3, 1).numpy()
 
