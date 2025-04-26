@@ -72,8 +72,8 @@ def save_clips_as_visuals(
 if __name__ == "__main__":
     # Example usage
     save_clips_as_visuals(
-        data_dir='data/tokens/timesformer/validation',
-        out_dir='data/visuals/timesformer/validation',
+        data_dir='data/tokens/TimeSformer/validation',
+        out_dir='data/visuals/TimeSformer/validation',
         tensor_key='pixel_values',
         format='mp4',
         fps=5
