@@ -87,7 +87,7 @@ class TimeSformer(BaseModel):
                        
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
-            clip_grad_norm_(optimizer.param_groups, max_grad_norm)
+            clip_grad_norm_(self.parameters(), max_grad_norm)
             scaler.step(optimizer)
             scaler.update()
             
