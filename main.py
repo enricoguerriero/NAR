@@ -1,6 +1,5 @@
 import os
 from argparse import ArgumentParser
-print(os.listdir(os.getcwd()), flush=True)
 from utils import load_model, setup_logging, setup_wandb, collate_fn
 from config import CONFIG
 from torch.utils.data import DataLoader

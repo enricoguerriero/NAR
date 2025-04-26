@@ -4,8 +4,8 @@ Script to test the NAR model with 0-shot prompting.
 '''
 import os
 from argparse import ArgumentParser
-from utils import setup_logging, setup_wandb, load_model
-from config import CONFIG
+from ..utils import setup_logging, setup_wandb, load_model
+from ..config import CONFIG
 from data.token_dataset import TokenDataset
 from transformers import (
     AutoTokenizer,
