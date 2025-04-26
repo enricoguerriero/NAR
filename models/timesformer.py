@@ -75,8 +75,6 @@ class TimeSformer(BaseModel):
             optimizer.zero_grad()
             pixel_values = batch["pixel_values"].to(self.device)
             labels = batch["labels"].to(self.device)
-            print(f"pixel_values shape: {pixel_values.shape}", flush=True)
-            print(f"pixel_values: {pixel_values}", flush=True)
             
             with autocast(device_type='cuda'):
                 outputs = self.forward(pixel_values, labels, loss_fct)
