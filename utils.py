@@ -2,6 +2,7 @@ import os
 import logging
 import wandb
 import time
+import torch
 
 def load_model(model_name: str, checkpoint: str):
     """
@@ -64,3 +65,6 @@ def setup_wandb(model_name: str, config: dict):
         resume = "allow")
     
     return run
+
+def collate_fn(batch):
+    return {key: torch.stack([item[key] for item in batch]) for key in batch[0]}

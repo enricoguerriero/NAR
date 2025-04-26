@@ -1,6 +1,6 @@
 import os
 from argparse import ArgumentParser
-from utils import load_model, setup_logging, setup_wandb
+from utils import load_model, setup_logging, setup_wandb, collate_fn
 from config import CONFIG
 from torch.utils.data import DataLoader
 
@@ -83,9 +83,9 @@ def main():
         logger.info("Training model ...")
         logger.info("Token dataset creation ...")
         train_dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], model.model_name, "train", f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
-        train_dataloader = DataLoader(train_dataset, batch_size = CONFIG["batch_size"], shuffle = True, num_workers = CONFIG["num_workers"])
+        train_dataloader = DataLoader(train_dataset, batch_size = CONFIG["batch_size"], shuffle = True, num_workers = CONFIG["num_workers"], collate_fn = collate_fn)
         validation_dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], model.model_name, "validation", f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
-        validation_dataloader = DataLoader(validation_dataset, batch_size = CONFIG["batch_size"], shuffle = False, num_workers = CONFIG["num_workers"])
+        validation_dataloader = DataLoader(validation_dataset, batch_size = CONFIG["batch_size"], shuffle = False, num_workers = CONFIG["num_workers"], collate_fn = collate_fn)
         logger.info("Token dataset created successfully.")
         logger.info("Training model ...")
         logger.info("Using the following parameters:")
@@ -125,7 +125,7 @@ def main():
         logger.info("Testing model ...")
         logger.info("Token dataset creation ...")
         test_dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], model.model_name, "test", f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
-        test_dataloader = DataLoader(test_dataset, batch_size = CONFIG["batch_size"], shuffle = False, num_workers = CONFIG["num_workers"])
+        test_dataloader = DataLoader(test_dataset, batch_size = CONFIG["batch_size"], shuffle = False, num_workers = CONFIG["num_workers"], collate_fn = collate_fn)
         logger.info("Token dataset created successfully.")
         logger.info("Testing model ...")
         model.test_model(test_dataloader = test_dataloader,
