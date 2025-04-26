@@ -37,11 +37,10 @@ class TimeSformer(BaseModel):
         self.backbone.classifier = torch.nn.Linear(config.hidden_size, num_classes)
         self.backbone.to(self.device)
         
-    def forward(self, input, labels = None, loss_fct = None): 
+    def forward(self, pixel_values, labels = None, loss_fct = None): 
         """
         Forward pass through the model.
         """
-        pixel_values = input["pixel_values"]
         pixel_values = pixel_values.to(self.device)
         labels = labels.to(self.device) if labels is not None else None
         outputs = self.backbone(pixel_values)
