@@ -141,7 +141,7 @@ class BaseModel(nn.Module):
         elif criterion_name == "crossentropy":
             criterion = torch.nn.CrossEntropyLoss()
         elif criterion_name == "wbce":
-            criterion = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+            criterion = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight.to(self.device))
         else:
             raise ValueError(f"Criterion {criterion_name} not available")
         return criterion
