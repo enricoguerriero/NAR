@@ -203,8 +203,8 @@ class BaseModel(nn.Module):
             logger.info(f"Processing video {i + 1}/{len(video_files)}")
             logger.info("-" * 20)
             
-            video_file = os.path.join(video_folder, video_files[i])
-            annotation_file = os.path.join(annotation_folder, annotation_files[i])
+            video_file = video_files[i]
+            annotation_file = annotation_files[i]
             logger.info(f"Processing {video_file} and {annotation_file}")
             annotation = self.read_annotations(annotation_file)
             
