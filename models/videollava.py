@@ -4,7 +4,6 @@ from transformers import VideoLlavaForConditionalGeneration, VideoLlavaProcessor
 from models.basemodel import BaseModel
 from torch.utils.data import DataLoader
 import numpy as np
-from sklearn.metrics import precision_recall_fscore_support
 from tqdm import tqdm
 import os
 from torch.optim import Optimizer, lr_scheduler
@@ -134,8 +133,8 @@ class VideoLlava(BaseModel):
                 outputs = self.forward_classifier(**inputs, loss_fct=loss_fct)
             loss = outputs["loss"]
             logits = outputs["logits"]
-            labels_list.append(labels)
-            logits_list.append(logits)
+            labels_list.append(labels.cpu())
+            logits_list.append(logits.cpu())
             
             if loss is not None:
                 scaler.scale(loss).backward()

@@ -8,6 +8,8 @@ import torch
 import glob
 from torch.utils.data import DataLoader
 from sklearn.metrics import precision_recall_fscore_support
+from torch import Tensor
+from torch.optim import lr_scheduler
 
 class BaseModel(nn.Module):
     """
@@ -17,9 +19,13 @@ class BaseModel(nn.Module):
     def __init__(self, device = "cuda", model_name: str = "baseModel"):
         super(BaseModel, self).__init__()
         self.model_name = model_name
-        self.device = torch.device(device)
+        self.device = torch.device(device) if device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.to(self.device)
-    
+        self.pos_weights = None
+        self.processor = None
+        self.classifier = None
+        self.num_classes = None
+        
     def forward(self, x):
         raise NotImplementedError("Subclasses must implement the forward method.")
 
@@ -30,7 +36,7 @@ class BaseModel(nn.Module):
         """
         raise NotImplementedError("Subclasses must implement modify_last_layer().")
     
-    def process_input(self, x):
+    def process_input(self, frame_list = None, prompt = None, system_message = None):
         """
         To be implemented in subclasses.
         """
@@ -190,8 +196,8 @@ class BaseModel(nn.Module):
         annotation_files = sorted(glob.glob(os.path.join(annotation_folder, "*.txt")))
         logger.info(f"Found {len(video_files)} video files and {len(annotation_files)} annotation files.")
         
-        folder_name = f'{clip_length}sec_{overlapping}overlap_{frame_per_second}fps'
-        output_folder = os.path.join(output_folder, self.model_name, folder_name)
+        folder_name = f'{clip_length}sec_{frame_per_second}fps'
+        output_folder = os.path.join(output_folder, folder_name)
         logger.info(f"Output folder: {output_folder}")
         os.makedirs(output_folder, exist_ok=True)
         logger.info(f"Created output folder: {output_folder}")
@@ -243,7 +249,7 @@ class BaseModel(nn.Module):
                         label = self.label_clip((frame_index / fps) * 1000, clip_length * 1000, annotation)
                         label_str = "_".join(str(x) for x in label)
                         tokens = self.process_input(frames_list, prompt, system_message)
-                        file_name = "video_" + str(i) + "_clip_" + str(clip_index) + label_str + ".pt"
+                        file_name = "video_" + str(i) + "_clip_" + str(clip_index) + "_" + label_str + ".pt"
                         torch.save(tokens, os.path.join(output_folder, file_name))
                         slide = frame_per_clip - overlapping_frames
                         frames_list = frames_list[slide:]
@@ -280,7 +286,6 @@ class BaseModel(nn.Module):
                 annotations.append((label, ann_start, ann_end, ann_length))
         return annotations
             
-
     def label_clip(self, clip_start, clip_length, annotations):
         """
         Label the clip based on the annotations.
@@ -443,3 +448,106 @@ class BaseModel(nn.Module):
         if test_loss is not None:
             final_log["test/loss"] = test_loss
         wandb.log(final_log)
+        
+    def train_epoch(self, dataloader: DataLoader, optimizer: torch.optim.Optimizer, criterion: nn.Module, max_grad_norm=1.0):
+        """
+        To be implemented in subclasses.
+        """
+        raise NotImplementedError("Subclasses must implement train_epoch().")
+
+    def eval_epoch(self, dataloader: DataLoader, criterion: nn.Module):
+        """
+        To be implemented in subclasses.
+        """
+        raise NotImplementedError("Subclasses must implement eval_epoch().")
+        
+    def train_model(
+        self,
+        train_dataloader: DataLoader,
+        val_dataloader: DataLoader | None = None,
+        epochs: int = 5,
+        optimizer: torch.optim.Optimizer = None,
+        criterion: nn.Module = None,
+        threshold: float = 0.5,
+        scheduler: lr_scheduler._LRScheduler = None,
+        patience: int = 3,
+        show_progress: bool = True,
+        wandb=None
+    ):
+        """
+        Train the model.
+        """
+        best_val_loss = float("inf")
+        no_improve = 0
+        
+        epo_iter = tqdm(range(1, epochs + 1), desc="Epochs", unit="epoch") if show_progress else range(1, epochs + 1)
+        
+        for epoch in epo_iter:
+            train_loss, train_logits, train_labels = self.train_epoch(train_dataloader, optimizer, criterion)
+            
+            log_msg = f"[{epoch:02d}/{epochs}] train-loss: {train_loss:.4f}"
+            train_metrics = self.metric_computation(train_logits, train_labels, threshold)
+            log_msg += f" | train-f1: {train_metrics['f1_macro']:.4f}"
+
+            if val_dataloader is not None:
+                val_loss, val_logits, val_labels = self.eval_epoch(val_dataloader, criterion)
+                
+                log_msg += f" | val-loss: {val_loss:.4f}"
+                val_metrics = self.metric_computation(val_logits, val_labels, threshold)
+                log_msg += f" | val-f1: {val_metrics['f1_macro']:.4f}"
+
+            if scheduler is not None:
+                if isinstance(scheduler, lr_scheduler.ReduceLROnPlateau):
+                    scheduler.step(val_loss)
+                else:
+                    scheduler.step()
+            if show_progress:
+                epo_iter.set_postfix_str(log_msg)
+            if wandb is not None:
+                self.log_wandb(wandb = wandb, 
+                               epoch = epoch, 
+                               train_loss = train_loss, 
+                               train_metrics = train_metrics, 
+                               val_loss = val_loss if val_dataloader is not None else None,
+                               val_metrics = val_metrics if val_dataloader is not None else None)
+            self.save_checkpoint(epoch = epoch,
+                                 optimizer = optimizer,
+                                 scheduler = scheduler)
+            
+            if val_dataloader is not None and val_loss < best_val_loss:
+                best_val_loss = val_loss
+                no_improve = 0
+            else:
+                no_improve += 1
+                if no_improve >= patience:
+                    print(f"Early stopping at epoch {epoch} with patience {patience}.", flush=True)
+                    break
+        
+        self.save_model()
+        
+        results = {"train_loss": train_loss,
+                   "train_metrics": train_metrics,
+                   "val_loss": val_loss if val_dataloader is not None else None,
+                   "val_metrics": val_metrics if val_dataloader is not None else None}
+
+        return results
+    
+    def test_model(self,
+                   test_dataloader: DataLoader,
+                   criterion: nn.Module = None,
+                   threshold: float = 0.5,
+                   wandb=None):
+        """
+        Test the model.
+        """
+        test_loss, test_logits, test_labels = self.eval_epoch(test_dataloader, criterion)
+        
+        test_metrics = self.metric_computation(test_logits, test_labels, threshold)
+        
+        if wandb is not None:
+            self.log_test_wandb(wandb = wandb, 
+                                test_loss = test_loss, 
+                                test_metrics = test_metrics)
+        
+        return {"test_loss": test_loss,
+                "test_metrics": test_metrics}

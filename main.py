@@ -69,7 +69,7 @@ def main():
         from data.token_dataset import TokenDataset
         for split in ["train", "validation", "test"]:
             logger.info(f"Creating token dataset for {split} ...")
-            dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], model.model_name, split))
+            dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], model.model_name, split, f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
             data_loader = DataLoader(dataset, batch_size = CONFIG["batch_size_feature"], shuffle = False, num_workers = CONFIG["num_workers"])
             logger.info(f"Token dataset for {split} created successfully.")
             logger.info(f"Exporting features for {split} ...")
