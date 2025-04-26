@@ -108,7 +108,7 @@ def main():
                                            optimizer = optimizer,
                                            epochs= CONFIG["epochs"],
                                            patience = CONFIG["patience"])
-        model.train(train_dataloader = train_dataloader,
+        model.train_model(train_dataloader = train_dataloader,
                     val_dataloader = validation_dataloader,
                     epochs = CONFIG["epochs"],
                     optimizer = optimizer,
@@ -128,7 +128,7 @@ def main():
         test_dataloader = DataLoader(test_dataset, batch_size = CONFIG["batch_size"], shuffle = False, num_workers = CONFIG["num_workers"])
         logger.info("Token dataset created successfully.")
         logger.info("Testing model ...")
-        model.test(test_dataloader = test_dataloader,
+        model.test_model(test_dataloader = test_dataloader,
                    threshold = CONFIG["threshold"],
                    wandb = wandb_run)
         logger.info("Model tested successfully.")

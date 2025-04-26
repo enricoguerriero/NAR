@@ -269,11 +269,9 @@ class VideoLlava(BaseModel):
         return {"test_loss": test_loss, "test_metrics": test_metrics}
 
     @torch.no_grad()
-    def generate(
+    def generate_answer(
         self,
-        video: list,                       
-        question: str,
-        system_message: str = "You are a helpful assistant.",
+        inputs,
         max_new_tokens: int = 128,
         **generate_kwargs,
     ) -> str:
@@ -290,14 +288,6 @@ class VideoLlava(BaseModel):
         Returns:
             A single decoded answer string.
         """
-        # Build V-LLaVA prompt and tokenize
-        prompt = self.prompt_definition(question, system_message)
-        inputs = self.processor(
-            text=prompt,
-            videos=video,
-            padding=True,
-            return_tensors="pt",
-        )
 
         # Move everything to the right device / dtype
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
