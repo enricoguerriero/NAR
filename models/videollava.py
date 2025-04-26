@@ -13,23 +13,23 @@ from torch.nn.utils import clip_grad_norm_
 class VideoLlava(BaseModel):
     def __init__(self, checkpoint_path: str = None, base_model_id: str = "LanguageBind/Video-LLaVA-7B-hf", device=None, num_classes=4):
         super().__init__()
-        self.model_name = "videollava"
+        self.Amodel_name = "videollava"
         self.device = torch.device(device) if device else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         # Load the processor and model
         self.processor = VideoLlavaProcessor.from_pretrained(base_model_id)
         if checkpoint_path:
-            self.model = VideoLlavaForConditionalGeneration.from_pretrained(
+            self.backbone = VideoLlavaForConditionalGeneration.from_pretrained(
                 checkpoint_path,
                 torch_dtype=torch.float16
             ).to(self.device)
         else:
-            self.model = VideoLlavaForConditionalGeneration.from_pretrained(
+            self.backbone = VideoLlavaForConditionalGeneration.from_pretrained(
                 base_model_id,
                 torch_dtype=torch.float16
             ).to(self.device)
 
-        hidden_size = self.model.get_input_embeddings().embedding_dim
+        hidden_size = self.backbone.get_input_embeddings().embedding_dim
 
         self.classifier = nn.Sequential(
             nn.Linear(hidden_size, 512),
@@ -38,14 +38,15 @@ class VideoLlava(BaseModel):
             nn.Linear(512, num_classes)
         )
         
-        for name, param in self.model.named_parameters():
+        for name, param in self.backbone.named_parameters():
             if "classifier" not in name:
                 param.requires_grad = False
         
         self.pos_weights = None
 
     def forward(self, pixel_values=None, input_ids=None, attention_mask=None, labels=None, loss_fct=None):
-        outputs = self.model(
+        
+        outputs = self.backbone(
             pixel_values_videos=pixel_values,
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -102,7 +103,7 @@ class VideoLlava(BaseModel):
         """
         Extract features from the model.
         """
-        outputs = self.model(
+        outputs = self.backbone(
             pixel_values_videos=pixel_values,
             input_ids=input_ids,
             attention_mask=attention_mask,

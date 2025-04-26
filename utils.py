@@ -25,7 +25,7 @@ def load_model(model_name: str, checkpoint: str):
         model = SmolVLM(checkpoint=checkpoint)
     elif model_name == "TimeSformer":
         from models.timesformer import TimeSformer
-        model = TimeSformer(checkpoint=checkpoint)
+        model = TimeSformer()
     else:
         from models.basemodel import BaseModel
         model = BaseModel(checkpoint=checkpoint)

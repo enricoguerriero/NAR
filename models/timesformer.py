@@ -14,13 +14,13 @@ class TimeSformer(BaseModel):
     
     def __init__(self,  
                  base_model_id: str = "facebook/timesformer-base-finetuned-ssv2", 
-                 device: str = None, 
+                 device: str = "cuda", 
                  num_classes: int = 4):
         """
         Initialize the TimeSformer model.
         """
         super().__init__(device=device, model_name="TimeSformer")
-        self.Amodel_name = "TimeSformer"
+        self.model_name = "TimeSformer"
         self.device = torch.device(device) if device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         config = TimesformerConfig.from_pretrained(base_model_id)
