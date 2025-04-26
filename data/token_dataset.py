@@ -22,3 +22,25 @@ class TokenDataset(Dataset):
         label_tensor = torch.tensor(label)
         data['labels'] = label_tensor
         return data
+    
+    def weight_computation(self):
+        """
+        Computes the pos_weight vector for BCEWithLogitsLoss.
+        
+        Returns:
+            pos_weight (torch.Tensor): Tensor of shape (n_classes,) for BCEWithLogitsLoss.
+        """
+        n_classes = 4
+        pos_counts = torch.zeros(n_classes)
+        
+        for clip in self:
+            label_tensor = clip['labels']
+            pos_counts += label_tensor
+
+        total = len(self)
+        neg_counts = total - pos_counts
+
+        # Avoid division by zero
+        pos_weight = neg_counts / (pos_counts + 1e-6)
+
+        return pos_weight

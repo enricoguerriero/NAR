@@ -79,10 +79,60 @@ def main():
         logger.info("-" * 20)
          
     if train:
-        pass
+        from data.token_dataset import TokenDataset
+        logger.info("Training model ...")
+        logger.info("Token dataset creation ...")
+        train_dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], model.model_name, "train", f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
+        train_dataloader = DataLoader(train_dataset, batch_size = CONFIG["batch_size"], shuffle = True, num_workers = CONFIG["num_workers"])
+        validation_dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], model.model_name, "validation", f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
+        validation_dataloader = DataLoader(validation_dataset, batch_size = CONFIG["batch_size"], shuffle = False, num_workers = CONFIG["num_workers"])
+        logger.info("Token dataset created successfully.")
+        logger.info("Training model ...")
+        logger.info("Using the following parameters:")
+        logger.info(f"Batch size: {CONFIG['batch_size']}")
+        logger.info(f"Learning rate: {CONFIG['learning_rate']}")
+        logger.info(f"Optimizer: {CONFIG['optimizer']}")
+        logger.info(f"Criterion: {CONFIG['criterion']}")
+        logger.info(f"Scheduler: {CONFIG['scheduler']}")
+        logger.info(f"Patience: {CONFIG['patience']}")
+        logger.info(f"Epochs: {CONFIG['epochs']}")
+        logger.info(f"Threshold: {CONFIG['threshold']}")
+        optimizer = model.define_optimizer(optimizer_name = CONFIG["optimizer"],
+                                           learning_rate = CONFIG["learning_rate"],
+                                           momentum = CONFIG["momentum"],
+                                           weight_decay = CONFIG["weight_decay"])
+        pos_weight = train_dataset.weight_computation()
+        criterion = model.define_criterion(criterion_name = CONFIG["criterion"],
+                                           pos_weight = pos_weight)
+        scheduler = model.define_scheduler(scheduler_name = CONFIG["scheduler"],
+                                           optimizer = optimizer,
+                                           epochs= CONFIG["epochs"],
+                                           patience = CONFIG["patience"])
+        model.train(train_dataloader = train_dataloader,
+                    val_dataloader = validation_dataloader,
+                    epochs = CONFIG["epochs"],
+                    optimizer = optimizer,
+                    criterion = criterion,
+                    threshold = CONFIG["threshold"],
+                    scheduler = scheduler,
+                    patience = CONFIG["patience"],
+                    show_progress = True,
+                    wandb = wandb_run)
+        logger.info("Model trained successfully.")
+        logger.info("-" * 20)
     
     if test:
-        pass
+        logger.info("Testing model ...")
+        logger.info("Token dataset creation ...")
+        test_dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], model.model_name, "test", f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
+        test_dataloader = DataLoader(test_dataset, batch_size = CONFIG["batch_size"], shuffle = False, num_workers = CONFIG["num_workers"])
+        logger.info("Token dataset created successfully.")
+        logger.info("Testing model ...")
+        model.test(test_dataloader = test_dataloader,
+                   threshold = CONFIG["threshold"],
+                   wandb = wandb_run)
+        logger.info("Model tested successfully.")
+        logger.info("-" * 20)
     
     if train_classifier:
         logger.info("Training classifier ...")
