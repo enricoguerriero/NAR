@@ -130,7 +130,7 @@ class VideoLlava(BaseModel):
             optimizer.zero_grad()
             inputs = {k: v.to(self.device) for k, v in batch.items()}
             labels = inputs.pop("labels")
-            with autocast():
+            with autocast(device_type='cuda'):
                 outputs = self.forward_classifier(**inputs, loss_fct=loss_fct)
             loss = outputs["loss"]
             logits = outputs["logits"]

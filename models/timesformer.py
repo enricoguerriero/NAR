@@ -77,7 +77,7 @@ class TimeSformer(BaseModel):
             pixel_values = batch["pixel_values"].to(self.device)
             labels = batch["labels"].to(self.device)
             
-            with autocast():
+            with autocast(device_type='cuda'):
                 outputs = self.forward(pixel_values, labels, loss_fct)
                 loss = outputs["loss"]
                 logits = outputs["logits"]
