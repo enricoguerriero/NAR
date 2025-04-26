@@ -14,9 +14,7 @@ class BaseModel(nn.Module):
     An abstract base class for video models.
     Provides a common interface for training, inference, and last-layer modifications.
     """
-    def __init__(self, device = "cuda", model_name: str = "baseModel", 
-                 system_message: str = "You are an helpful assistant.", 
-                 prompt: str = "Describe the scene"):
+    def __init__(self, device = "cuda", model_name: str = "baseModel"):
         super(BaseModel, self).__init__()
         self.model_name = model_name
         self.device = torch.device(device)
