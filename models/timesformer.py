@@ -48,7 +48,7 @@ class TimeSformer(BaseModel):
         logits = logits.to(self.device)
         loss = None
         if labels is not None and loss_fct is not None:
-            loss = loss_fct(logits, labels)
+            loss = loss_fct(logits, labels.float())
         
         return {"loss": loss, "logits": logits}
     
