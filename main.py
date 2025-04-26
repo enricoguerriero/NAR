@@ -117,7 +117,7 @@ def main():
                     scheduler = scheduler,
                     patience = CONFIG["patience"],
                     show_progress = True,
-                    wandb = wandb_run)
+                    wandb_run = wandb_run)
         logger.info("Model trained successfully.")
         logger.info("-" * 20)
     

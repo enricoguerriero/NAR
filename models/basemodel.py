@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import precision_recall_fscore_support
 from torch import Tensor
 from torch.optim import lr_scheduler
+import wandb
 
 class BaseModel(nn.Module):
     """
@@ -382,7 +383,7 @@ class BaseModel(nn.Module):
         }
         return metrics
 
-    def log_wandb(self, wandb, epoch, train_loss, train_metrics, val_loss=None, val_metrics=None):
+    def log_wandb(self, wandb_run, epoch, train_loss, train_metrics, val_loss=None, val_metrics=None):
         """
         Log the training and validation metrics to Weights & Biases.
         """
@@ -423,9 +424,9 @@ class BaseModel(nn.Module):
             final_log["val/precision_macro"] = val_metrics["precision_macro"]
             final_log["val/recall_macro"] = val_metrics["recall_macro"]
             final_log["val/f1_macro"] = val_metrics["f1_macro"]
-        wandb.log(final_log, step=epoch)
+        wandb_run.log(final_log, step=epoch)
 
-    def log_test_wandb(self, wandb, test_metrics, test_loss=None):
+    def log_test_wandb(self, wandb_run, test_metrics, test_loss=None):
         """
         Log the test metrics to Weights & Biases.
         """
@@ -447,7 +448,7 @@ class BaseModel(nn.Module):
         final_log["test/f1_macro"] = test_metrics["f1_macro"]
         if test_loss is not None:
             final_log["test/loss"] = test_loss
-        wandb.log(final_log)
+        wandb_run.log(final_log)
         
     def train_epoch(self, dataloader: DataLoader, optimizer: torch.optim.Optimizer, criterion: nn.Module, max_grad_norm=1.0):
         """
@@ -472,7 +473,7 @@ class BaseModel(nn.Module):
         scheduler: lr_scheduler._LRScheduler = None,
         patience: int = 3,
         show_progress: bool = True,
-        wandb=None
+        wandb_run=None
     ):
         """
         Train the model.
@@ -503,8 +504,8 @@ class BaseModel(nn.Module):
                     scheduler.step()
             if show_progress:
                 epo_iter.set_postfix_str(log_msg)
-            if wandb is not None:
-                self.log_wandb(wandb = wandb, 
+            if wandb_run is not None:
+                self.log_wandb(wandb_run = wandb_run, 
                                epoch = epoch, 
                                train_loss = train_loss, 
                                train_metrics = train_metrics, 
@@ -536,7 +537,7 @@ class BaseModel(nn.Module):
                    test_dataloader: DataLoader,
                    criterion: nn.Module = None,
                    threshold: float = 0.5,
-                   wandb=None):
+                   wandb_run=None):
         """
         Test the model.
         """
@@ -544,8 +545,8 @@ class BaseModel(nn.Module):
         
         test_metrics = self.metric_computation(test_logits, test_labels, threshold)
         
-        if wandb is not None:
-            self.log_test_wandb(wandb = wandb, 
+        if wandb_run is not None:
+            self.log_test_wandb(wandb_run = wandb_run, 
                                 test_loss = test_loss, 
                                 test_metrics = test_metrics)
         
