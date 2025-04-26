@@ -244,7 +244,7 @@ class BaseModel(nn.Module):
                         label_str = "_".join(str(x) for x in label)
                         tokens = self.process_input(frames_list, prompt, system_message)
                         file_name = "video_" + str(i) + "_clip_" + str(clip_index) + label_str + ".pt"
-                        torch.save(os.path.join(output_folder, file_name), tokens)
+                        torch.save(tokens, os.path.join(output_folder, file_name))
                         slide = frame_per_clip - overlapping_frames
                         frames_list = frames_list[slide:]
                         
