@@ -89,7 +89,6 @@ def main():
     judge_pipe = TextGenerationPipeline(
         model=judge_model,
         tokenizer=judge_tokenizer,
-        device=0 if device == "cuda" else -1,
         task="text-generation"
     )
     
