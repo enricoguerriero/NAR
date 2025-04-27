@@ -27,7 +27,7 @@ class TimeSformer(BaseModel):
         self.processor = AutoImageProcessor.from_pretrained(base_model_id)
         self.backbone = TimesformerForVideoClassification.from_pretrained(base_model_id)
         self.backbone.gradient_checkpointing_enable() # Enable gradient checkpointing - save GPU memory
-        self.backbone = torch.compile(self.backbone) # speed up training
+        # self.backbone = torch.compile(self.backbone) # speed up training
         if torch.cuda.device_count() > 1:
             self.backbone = torch.nn.DataParallel(self.backbone) # Use DataParallel if multiple GPUs are available
                 
