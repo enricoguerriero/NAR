@@ -55,7 +55,7 @@ def main():
     
     # Export tokens
     if export_tokens:
-        token_dir = os.path.join("tokens", model_name, "0-shot")
+        token_dir = os.path.join("data/tokens", model_name, "0-shot")
         os.makedirs(token_dir, exist_ok=True)
         logger.info(f"Exporting tokens to {token_dir}.")
         
