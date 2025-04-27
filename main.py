@@ -101,7 +101,7 @@ def main():
                                            learning_rate = CONFIG["learning_rate"],
                                            momentum = CONFIG["momentum"],
                                            weight_decay = CONFIG["weight_decay"])
-        pos_weight = train_dataset.weight_computation()
+        pos_weight, prior_probability = train_dataset.weight_computation()
         criterion = model.define_criterion(criterion_name = CONFIG["criterion"],
                                            pos_weight = pos_weight)
         scheduler = model.define_scheduler(scheduler_name = CONFIG["scheduler"],
@@ -117,7 +117,9 @@ def main():
                     scheduler = scheduler,
                     patience = CONFIG["patience"],
                     show_progress = True,
-                    wandb_run = wandb_run)
+                    prior_probability = prior_probability,
+                    wandb_run = wandb_run,
+                    logger = logger)
         logger.info("Model trained successfully.")
         logger.info("-" * 20)
     
@@ -130,7 +132,7 @@ def main():
         logger.info("Testing model ...")
         model.test_model(test_dataloader = test_dataloader,
                    threshold = CONFIG["threshold"],
-                   wandb = wandb_run)
+                   wandb_run = wandb_run)
         logger.info("Model tested successfully.")
         logger.info("-" * 20)
     
@@ -172,7 +174,7 @@ def main():
                                scheduler = scheduler,
                                patience = CONFIG["patience"],
                                show_progress = True,
-                               wandb = wandb_run)
+                               wandb_run = wandb_run)
         logger.info("Classifier trained successfully.")
         logger.info("-" * 20)
     

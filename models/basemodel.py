@@ -458,58 +458,83 @@ class BaseModel(nn.Module):
         scheduler: lr_scheduler._LRScheduler = None,
         patience: int = 3,
         show_progress: bool = True,
-        wandb_run=None
+        prior_probability: Tensor = None,
+        wandb_run=None,
+        logger: logging.Logger = None
     ):
         """
         Train the model.
         """
         best_val_loss = float("inf")
         no_improve = 0
+        logger.info(f"Training {self.model_name} model")
+                
+        bias = -(1 - prior_probability).log() + prior_probability.log()
+        self.backbone.classifier.bias.data = bias.to(self.device)
+        logger.info(f"Initial bias for the model: {bias}")
         
         epo_iter = tqdm(range(1, epochs + 1), desc="Epochs", unit="epoch") if show_progress else range(1, epochs + 1)
         
         for epoch in epo_iter:
+            logger.info(f"Starting epoch {epoch}/{epochs}")
             train_loss, train_logits, train_labels = self.train_epoch(train_dataloader, optimizer, criterion)
+            logger.info(f"Finished training epoch {epoch}")
+            logger.info(f"Train loss: {train_loss:.4f}")
             
             log_msg = f"[{epoch:02d}/{epochs}] train-loss: {train_loss:.4f}"
             train_metrics = self.metric_computation(train_logits, train_labels, threshold)
             log_msg += f" | train-f1: {train_metrics['f1_macro']:.4f}"
+            logger.info(f"Train metrics: {train_metrics}")
 
             if val_dataloader is not None:
+                logger.info(f"Starting validation epoch {epoch}")
                 val_loss, val_logits, val_labels = self.eval_epoch(val_dataloader, criterion)
+                logger.info(f"Finished validation epoch {epoch}")
+                logger.info(f"Validation loss: {val_loss:.4f}")
                 
                 log_msg += f" | val-loss: {val_loss:.4f}"
                 val_metrics = self.metric_computation(val_logits, val_labels, threshold)
                 log_msg += f" | val-f1: {val_metrics['f1_macro']:.4f}"
-
+                logger.info(f"Validation metrics: {val_metrics}")
+                
             if scheduler is not None:
                 if isinstance(scheduler, lr_scheduler.ReduceLROnPlateau):
                     scheduler.step(val_loss)
                 else:
                     scheduler.step()
+                logger.info(f"Scheduler step: {scheduler.get_last_lr()}")
             if show_progress:
                 epo_iter.set_postfix_str(log_msg)
             if wandb_run is not None:
+                logger.info(f"Logging to Weights & Biases")
                 self.log_wandb(wandb_run = wandb_run, 
                                epoch = epoch, 
                                train_loss = train_loss, 
                                train_metrics = train_metrics, 
                                val_loss = val_loss if val_dataloader is not None else None,
                                val_metrics = val_metrics if val_dataloader is not None else None)
+                logger.info(f"Finished logging to Weights & Biases")
+            logger.info(f"Saving checkpoint for epoch {epoch}")
             self.save_checkpoint(epoch = epoch,
                                  optimizer = optimizer,
                                  scheduler = scheduler)
+            logger.info(f"Finished saving checkpoint for epoch {epoch}")
             
             if val_dataloader is not None and val_loss < best_val_loss:
                 best_val_loss = val_loss
                 no_improve = 0
+                logger.info(f"Validation loss improved to {best_val_loss:.4f} at epoch {epoch}")
             else:
                 no_improve += 1
+                logger.info(f"No improvement in validation loss for {no_improve} epochs")
                 if no_improve >= patience:
-                    print(f"Early stopping at epoch {epoch} with patience {patience}.", flush=True)
+                    logger.info(f"Early stopping at epoch {epoch} with patience {patience}.")
                     break
         
+        logger.info(f"Training finished after {epoch} epochs")
+        logger.info("Saving final model")
         self.save_model()
+        logger.info("Final model saved")
         
         results = {"train_loss": train_loss,
                    "train_metrics": train_metrics,

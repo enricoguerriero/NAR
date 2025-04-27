@@ -15,7 +15,7 @@ class FeatureDataset(Dataset):
 
     def __getitem__(self, idx):
         file_path = os.path.join(self.data_dir, self.files[idx])
-        data = torch.load(file_path)
+        data = torch.load(file_path, weights_only=True)
         label = self.files[idx].split("_")[-4:]
         label = [int(x) for x in label]
         return data, label
@@ -38,7 +38,9 @@ class FeatureDataset(Dataset):
         neg_counts = total - pos_counts
 
         # Avoid division by zero
-        pos_weight = neg_counts / (pos_counts + 1e-6)
+        raw_weight = neg_counts / (pos_counts + 1e-6)
+
+        pos_weight = torch.clamp(raw_weight, max=10.0)
 
         return pos_weight
 

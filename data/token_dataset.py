@@ -15,7 +15,7 @@ class TokenDataset(Dataset):
 
     def __getitem__(self, idx):
         file_path = os.path.join(self.data_dir, self.files[idx])
-        data = torch.load(file_path)
+        data = torch.load(file_path, weights_only=True)
         name, _ = os.path.splitext(self.files[idx])
         label = name.split("_")[-4:]
         label = [int(x) for x in label]
@@ -41,6 +41,9 @@ class TokenDataset(Dataset):
         neg_counts = total - pos_counts
 
         # Avoid division by zero
-        pos_weight = neg_counts / (pos_counts + 1e-6)
+        raw_weight = neg_counts / (pos_counts + 1e-6)
 
-        return pos_weight
+        pos_weight = torch.clamp(raw_weight, max=10.0)
+        prior_probability = pos_counts / total 
+
+        return pos_weight, prior_probability
