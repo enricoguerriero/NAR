@@ -33,7 +33,7 @@ CONFIG = {
     "learning_rate": 0.001,
     "momentum": 0.9,
     "weight_decay": 0.01,
-    "criterion": "wbce",
+    "criterion": "bce",
     "scheduler": "reduceonplateau",
     "patience": 5,
     "epochs": 20,
