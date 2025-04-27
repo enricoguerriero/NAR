@@ -470,7 +470,7 @@ class BaseModel(nn.Module):
         logger.info(f"Training {self.model_name} model")
                 
         bias = -(1 - prior_probability).log() + prior_probability.log()
-        self.backbone.classifier.bias.data = bias.to(self.device)
+        self.classifier.bias.data = bias.to(self.device)
         logger.info(f"Initial bias for the model: {bias}")
         
         epo_iter = tqdm(range(1, epochs + 1), desc="Epochs", unit="epoch") if show_progress else range(1, epochs + 1)

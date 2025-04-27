@@ -31,7 +31,7 @@ class TimeSformer(BaseModel):
         if torch.cuda.device_count() > 1:
             self.backbone = torch.nn.DataParallel(self.backbone) # Use DataParallel if multiple GPUs are available
                 
-        self.classifier = torch.nn.Linear(config.hidden_size, num_classes)
+        self.classifier = torch.nn.Linear(config.hidden_size, num_classes, bias=True)
         self.backbone.to(self.device)
         self.classifier.to(self.device)
         
