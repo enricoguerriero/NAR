@@ -71,7 +71,7 @@ def main():
         logger.info("Tokens exported successfully.")
     else:
         logger.info("Exporting tokens is skipped.")
-        token_dir = os.path.join("tokens", model_name, "0-shot")
+        token_dir = os.path.join("data/tokens", model_name, "0-shot", f"{CONFIG['clip_length_0s']}sec_{CONFIG['frame_per_second_0s']}fps")
     
     token_dataset = TokenDataset(token_dir)
     logger.info(f"Token dataset loaded from {token_dir}.")
