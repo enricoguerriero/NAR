@@ -24,19 +24,16 @@ class TimeSformer(BaseModel):
         self.device = torch.device(device) if device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         config = TimesformerConfig.from_pretrained(base_model_id)
-        config.problem_type = "multi_label_classification"
-        config.num_labels = num_classes
         self.processor = AutoImageProcessor.from_pretrained(base_model_id)
-        # self.backbone = TimesformerForVideoClassification.from_pretrained(base_model_id)
-        # self.backbone.config = config
-        self.backbone = TimesformerForVideoClassification.from_pretrained(base_model_id, config=config)
+        self.backbone = TimesformerForVideoClassification.from_pretrained(base_model_id)
         self.backbone.gradient_checkpointing_enable() # Enable gradient checkpointing - save GPU memory
         self.backbone = torch.compile(self.backbone) # speed up training
         if torch.cuda.device_count() > 1:
             self.backbone = torch.nn.DataParallel(self.backbone) # Use DataParallel if multiple GPUs are available
                 
-        self.backbone.classifier = torch.nn.Linear(config.hidden_size, num_classes)
+        self.classifier = torch.nn.Linear(config.hidden_size, num_classes)
         self.backbone.to(self.device)
+        self.classifier.to(self.device)
         
     def forward(self, pixel_values, labels = None, loss_fct = None): 
         """
@@ -45,7 +42,9 @@ class TimeSformer(BaseModel):
         pixel_values = pixel_values.to(self.device)
         labels = labels.to(self.device) if labels is not None else None
         outputs = self.backbone(pixel_values)
-        logits = outputs.logits
+        hidden_states = outputs.hidden_states[-1]
+        features = hidden_states.mean(dim=1)
+        logits = self.classifier(features)
         loss = None
         if labels is not None and loss_fct is not None:
             loss = loss_fct(logits, labels.float())
