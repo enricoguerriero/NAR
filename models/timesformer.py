@@ -27,8 +27,9 @@ class TimeSformer(BaseModel):
         config.problem_type = "multi_label_classification"
         config.num_labels = num_classes
         self.processor = AutoImageProcessor.from_pretrained(base_model_id)
-        self.backbone = TimesformerForVideoClassification.from_pretrained(base_model_id)
-        self.backbone.config = config
+        # self.backbone = TimesformerForVideoClassification.from_pretrained(base_model_id)
+        # self.backbone.config = config
+        self.backbone = TimesformerForVideoClassification.from_pretrained(base_model_id, config=config)
         self.backbone.gradient_checkpointing_enable() # Enable gradient checkpointing - save GPU memory
         self.backbone = torch.compile(self.backbone) # speed up training
         if torch.cuda.device_count() > 1:
