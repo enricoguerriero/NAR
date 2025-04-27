@@ -15,7 +15,7 @@ class TokenDataset(Dataset):
 
     def __getitem__(self, idx):
         file_path = os.path.join(self.data_dir, self.files[idx])
-        data = torch.load(file_path, weights_only=True)
+        data = torch.load(file_path, weights_only=False)
         name, _ = os.path.splitext(self.files[idx])
         label = name.split("_")[-4:]
         label = [int(x) for x in label]
