@@ -185,7 +185,7 @@ def main():
         logger.info("Testing classifier ...")
         model.test_classifier(test_dataloader = test_dataloader,
                                threshold = CONFIG["threshold"],
-                               wandb = wandb_run)
+                               wandb_run = wandb_run)
         logger.info("Classifier tested successfully.")
         logger.info("-" * 20)
         

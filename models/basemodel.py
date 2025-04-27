@@ -330,52 +330,37 @@ class BaseModel(nn.Module):
                         labels: torch.Tensor,
                         threshold: float = 0.5):
         """
-        Compute confusion-matrix counts (TP, FP, TN, FN) and derived metrics for
-        a *multi-label* task.
-
-        Parameters
-        ----------
-        logits : FloatTensor,  shape = (batch, n_classes)
-            Raw model scores.
-        labels : FloatTensor / LongTensor, shape = (batch, n_classes)
-            Binary ground-truth indicators (0/1).
-        threshold : float
-            Decision cutoff after sigmoid.
-
-        Returns
-        -------
-        dict
-            Keys:
-                TP, FP, FN, TN                - np.ndarray[n_classes]
-                accuracy, precision, recall,
-                f1                             - np.ndarray[n_classes]
-                accuracy_macro, precision_macro,
-                recall_macro, f1_macro         - scalars
+        Compute TP/FP/FN/TN and derived metrics for a multi-label task.
         """
 
-        preds = (logits.sigmoid() >= threshold).to(labels.dtype)
+        # make everything boolean
+        preds = (logits.sigmoid() >= threshold)
+        truths = labels.bool()
 
-        TP = (preds &  labels).sum(dim=0).cpu().numpy()
-        FP = (preds & ~labels).sum(dim=0).cpu().numpy()
-        FN = (~preds &  labels).sum(dim=0).cpu().numpy()
-        TN = (~preds & ~labels).sum(dim=0).cpu().numpy()
+        # now logical ops do what you expect
+        TP =   (preds &  truths).sum(dim=0).cpu().numpy()
+        FP =   (preds & ~truths).sum(dim=0).cpu().numpy()
+        FN =  (~preds &  truths).sum(dim=0).cpu().numpy()
+        TN =  (~preds & ~truths).sum(dim=0).cpu().numpy()
 
+        # per-class accuracy
         total = TP + FP + FN + TN
         acc_per_class = (TP + TN) / total.clip(min=1)
 
+        # precision/recall/f1 via sklearn
         p, r, f1, _ = precision_recall_fscore_support(
-            labels.cpu().numpy(),
-            preds.cpu().numpy(),
+            truths.cpu().numpy().astype(int),
+            preds.cpu().numpy().astype(int),
             average=None,
             zero_division=0
         )
 
         metrics = {
             "TP": TP, "FP": FP, "FN": FN, "TN": TN,
-            "accuracy":  acc_per_class,
-            "precision": p,
-            "recall":    r,
-            "f1":        f1,
+            "accuracy":      acc_per_class,
+            "precision":     p,
+            "recall":        r,
+            "f1":            f1,
             "accuracy_macro":  acc_per_class.mean().item(),
             "precision_macro": p.mean().item(),
             "recall_macro":    r.mean().item(),
