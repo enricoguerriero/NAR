@@ -41,7 +41,7 @@ class TimeSformer(BaseModel):
         """
         pixel_values = pixel_values.to(self.device)
         labels = labels.to(self.device) if labels is not None else None
-        outputs = self.backbone(pixel_values)
+        outputs = self.backbone(pixel_values, output_hidden_states=True)
         hidden_states = outputs.hidden_states[-1]
         features = hidden_states.mean(dim=1)
         logits = self.classifier(features)
