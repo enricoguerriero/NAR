@@ -56,7 +56,7 @@ CONFIG = {
     "weight_decay": 0.01,
     "criterion": "wbce",
     "scheduler": "reduceonplateau",
-    "patience": 5,
+    "patience": 10,
     "epochs": 20,
     "threshold": 0.5,
     "num_workers": 4,

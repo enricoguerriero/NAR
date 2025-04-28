@@ -41,9 +41,9 @@ class TimeSformer(BaseModel):
         self.backbone.to(self.device)
         self.classifier.to(self.device)
         
-        if not fine_tune_backbone:
-                for param in self.backbone.parameters():
-                    param.requires_grad = False
+        # if not fine_tune_backbone:
+        #         for param in self.backbone.parameters():
+        #             param.requires_grad = False
 
         
     def interpolate_pos_encoding(self, num_frames: int, img_size: int = 224, patch_size: int = 16):
