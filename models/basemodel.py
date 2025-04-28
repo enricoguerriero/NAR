@@ -62,6 +62,12 @@ class BaseModel(nn.Module):
         
         with torch.no_grad():
             for step, batch in tqdm(enumerate(dataloader), total=len(dataloader), desc="Extracting features"):
+                print(f"Batch keys: {batch.keys()}", flush = True)
+                print(f"Batch size: {len(batch['pixel_values'])}", flush = True)
+                print(f"Batch pixel values shape: {batch['pixel_values'].shape}", flush = True)
+                print(f"Batch input IDs shape: {batch['input_ids'].shape}", flush = True)
+                print(f"Batch attention mask shape: {batch['attention_mask'].shape}", flush = True)
+                print(f"Batch labels shape: {batch['labels'].shape}", flush = True)
                 pixel_values = batch.get("pixel_values")
                 input_ids = batch.get("input_ids")
                 attention_mask = batch.get("attention_mask")
