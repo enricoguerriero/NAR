@@ -116,31 +116,31 @@ class TimeSformer(BaseModel):
         total_samples = 0
         labels_list = []
         logits_list = []
-        # scaler  = GradScaler()
+        scaler  = GradScaler()
         
         for batch in tqdm(dataloader, desc="Training", unit="batch"):
             optimizer.zero_grad()
             pixel_values = batch["pixel_values"].to(self.device)
             labels = batch["labels"].to(self.device)
             
-            # with autocast(device_type='cuda'):
-                # outputs = self.forward(pixel_values, labels, loss_fct)
-                # loss = outputs["loss"]
-                # logits = outputs["logits"]
-            outputs = self.forward(pixel_values, labels, loss_fct)
-            loss = outputs["loss"]
-            logits = outputs["logits"]
+            with autocast(device_type='cuda'):
+                outputs = self.forward(pixel_values, labels, loss_fct)
+                loss = outputs["loss"]
+                logits = outputs["logits"]
+            # outputs = self.forward(pixel_values, labels, loss_fct)
+            # loss = outputs["loss"]
+            # logits = outputs["logits"]
             
             labels_list.append(labels.cpu())
             logits_list.append(logits.cpu())    
                        
-            loss.backward()
-            optimizer.step()
-            # scaler.scale(loss).backward()
-            # scaler.unscale_(optimizer)
-            # clip_grad_norm_(self.parameters(), max_grad_norm)
-            # scaler.step(optimizer)
-            # scaler.update()
+            # loss.backward()
+            # optimizer.step()
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            clip_grad_norm_(self.parameters(), max_grad_norm)
+            scaler.step(optimizer)
+            scaler.update()
             
             total_loss += loss.item() * labels.size(0)
             total_samples += labels.size(0)
