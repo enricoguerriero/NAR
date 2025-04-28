@@ -68,7 +68,7 @@ class BaseModel(nn.Module):
                 
                 if pixel_values is not None:
                     pixel_values = pixel_values.to(self.device)
-                    print(f"Pixel values shape: {pixel_values.shape}")
+                    print(f"Pixel values shape: {pixel_values.shape}", flush = True)
                     if pixel_values.shape[1] == 1:
                         pixel_values = pixel_values.squeeze(1)        
                 if input_ids is not None:
