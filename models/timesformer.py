@@ -15,7 +15,8 @@ class TimeSformer(BaseModel):
     def __init__(self,  
                  base_model_id: str = "facebook/timesformer-base-finetuned-ssv2", 
                  device: str = "cuda", 
-                 num_classes: int = 4):
+                 num_classes: int = 4,
+                 num_frames: int = 8):
         """
         Initialize the TimeSformer model.
         """
@@ -27,6 +28,10 @@ class TimeSformer(BaseModel):
         self.processor = AutoImageProcessor.from_pretrained(base_model_id)
         self.backbone = TimesformerForVideoClassification.from_pretrained(base_model_id)
         self.backbone.gradient_checkpointing_enable() # Enable gradient checkpointing - save GPU memory
+        
+        if num_frames != 8:  # 8 = default number of frames for SSV2 pretraining
+            self.interpolate_pos_encoding(num_frames=num_frames)
+        
         # self.backbone = torch.compile(self.backbone) # speed up training
         if torch.cuda.device_count() > 1:
             self.backbone = torch.nn.DataParallel(self.backbone) # Use DataParallel if multiple GPUs are available
@@ -34,6 +39,42 @@ class TimeSformer(BaseModel):
         self.classifier = torch.nn.Linear(config.hidden_size, num_classes, bias=True)
         self.backbone.to(self.device)
         self.classifier.to(self.device)
+        
+    def interpolate_pos_encoding(self, num_frames: int, img_size: int = 224, patch_size: int = 16):
+        """
+        Interpolate the position encodings to accommodate a different number of frames.
+        """
+        pos_embed = self.backbone.time_embed  # (1, num_tokens, hidden_dim)
+        cls_pos_embed = pos_embed[:, 0, :].unsqueeze(1)  # Class token embedding
+        pos_embed_spatial = pos_embed[:, 1:, :]  # Patch + frame tokens
+
+        num_patches_per_frame = (img_size // patch_size) ** 2
+        pos_embed_spatial = pos_embed_spatial.reshape(1, -1, num_patches_per_frame, pos_embed.shape[-1])  # (1, frames, patches, dim)
+
+        old_num_frames = pos_embed_spatial.shape[1]
+        if old_num_frames == num_frames:
+            return  # No need to interpolate
+
+        # Rearrange for interpolation
+        pos_embed_spatial = pos_embed_spatial.permute(0, 3, 2, 1)  # (1, dim, patches, frames)
+        
+        # Interpolate frames dimension
+        pos_embed_spatial = torch.nn.functional.interpolate(
+            pos_embed_spatial,
+            size=(num_patches_per_frame, num_frames),
+            mode="bilinear",
+            align_corners=False
+        )
+        
+        # Rearrange back
+        pos_embed_spatial = pos_embed_spatial.permute(0, 3, 2, 1)  # (1, frames, patches, dim)
+        pos_embed_spatial = pos_embed_spatial.reshape(1, num_frames * num_patches_per_frame, -1)  # (1, frames * patches, dim)
+
+        # Concatenate cls token back
+        new_pos_embed = torch.cat((cls_pos_embed, pos_embed_spatial), dim=1)
+
+        # Update model's positional embeddings
+        self.backbone.time_embed = torch.nn.Parameter(new_pos_embed)
         
     def forward(self, pixel_values, labels = None, loss_fct = None): 
         """
