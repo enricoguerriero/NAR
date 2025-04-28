@@ -103,8 +103,7 @@ class TimeSformer(BaseModel):
         Process the input frames and return the pixel values.
         """
         inputs = self.processor(frames_list,
-                                return_tensors="pt",
-                                padding=True)
+                                return_tensors="pt")
         return inputs
     
     def train_epoch(self, dataloader, optimizer, loss_fct, max_grad_norm=1.0):
