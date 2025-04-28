@@ -73,10 +73,10 @@ class BaseModel(nn.Module):
                 attention_mask = batch.get("attention_mask")
                 
                 if pixel_values is not None:
-                    pixel_values = pixel_values.to(self.device)
+                    pixel_values = pixel_values.squeeze(1).to(self.device)
                 if input_ids is not None:
-                    input_ids = input_ids.to(self.device)
-                    attention_mask = attention_mask.to(self.device)
+                    input_ids = input_ids.squeeze(1).to(self.device)
+                    attention_mask = attention_mask.squeeze(1).to(self.device)
 
                 features = self.feature_extraction(pixel_values, input_ids, attention_mask)
                 labels = batch["labels"]
