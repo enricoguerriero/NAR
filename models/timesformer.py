@@ -16,7 +16,8 @@ class TimeSformer(BaseModel):
                  base_model_id: str = "facebook/timesformer-base-finetuned-ssv2", 
                  device: str = "cuda", 
                  num_classes: int = 4,
-                 num_frames: int = 8):
+                 num_frames: int = 8,
+                 fine_tune_backbone: bool = False):
         """
         Initialize the TimeSformer model.
         """
@@ -39,6 +40,11 @@ class TimeSformer(BaseModel):
         self.classifier = torch.nn.Linear(config.hidden_size, num_classes, bias=True)
         self.backbone.to(self.device)
         self.classifier.to(self.device)
+        
+        if not fine_tune_backbone:
+                for param in self.backbone.parameters():
+                    param.requires_grad = False
+
         
     def interpolate_pos_encoding(self, num_frames: int, img_size: int = 224, patch_size: int = 16):
         """
