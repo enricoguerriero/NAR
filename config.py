@@ -6,7 +6,7 @@ CONFIG = {
     "feature_dir": "data/features",
     
     # data specific
-    "clip_length": 2,  # seconds
+    "clip_length": 1,  # seconds
     "overlapping": 0.5,  # proportion of overlap
     "frame_per_second": 8,  # target FPS
     "batch_size_feature": 2, # batch size for feature extraction (low because it runs the vlm)
