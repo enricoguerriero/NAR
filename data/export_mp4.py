@@ -8,7 +8,7 @@ def save_clips_as_visuals(
     out_dir: str,
     tensor_key: str = 'pixel_values',
     format: str = 'gif',
-    fps: int = 5
+    fps: int = 4
 ):
     """
     Saves each tensor clip in data_dir as a GIF or MP4 in out_dir, 
@@ -71,9 +71,9 @@ def save_clips_as_visuals(
 if __name__ == "__main__":
     # Example usage
     save_clips_as_visuals(
-        data_dir='data/tokens/TimeSformer/validation/2sec_8fps',
+        data_dir='data/tokens/TimeSformer/validation/2sec_4fps',
         out_dir='data/visuals/TimeSformer/validation',
         tensor_key='pixel_values',
         format='mp4',
-        fps=8
+        fps=4
     )
