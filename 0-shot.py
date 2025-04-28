@@ -147,7 +147,7 @@ def main():
         
         # check if the predicted labels match the real labels
         # before that, convert the predicted labels to a list
-        predicted_labels_list = [int(predicted_labels[label]) for label in LABELS]
+        predicted_labels_list = [int(predicted_labels.get(label, False)) for label in LABELS]
         logger.info(f"Predicted labels list: {predicted_labels_list}")
 
         for j in range(4):
