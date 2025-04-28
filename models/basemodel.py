@@ -68,6 +68,8 @@ class BaseModel(nn.Module):
                 
                 if pixel_values is not None:
                     pixel_values = pixel_values.to(self.device)
+                    if pixel_values.dim() == 5:
+                        pixel_values = pixel_values.squeeze(0)
                 if input_ids is not None:
                     input_ids = input_ids.to(self.device)
                     attention_mask = attention_mask.to(self.device)
