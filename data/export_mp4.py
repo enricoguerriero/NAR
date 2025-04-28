@@ -46,7 +46,7 @@ def save_clips_as_visuals(
 
         # Build output filename with labels
         base_name = os.path.splitext(fname)[0]
-        label = data['labels'].tolist()
+        label = data['label'].tolist()
         label_str = '_'.join(map(str, label))
         out_ext = format.lower()
         out_name = f"{base_name}_labels_{label_str}.{out_ext}"
