@@ -18,8 +18,8 @@ def main(data_dir: str):
     pos_counts = torch.zeros(n_classes, dtype=torch.int64)
     shape_counters = {
         'pixel_values': Counter(),
-        'attention_mask': Counter(),
-        'input_ids': Counter(),
+        # 'attention_mask': Counter(),
+        # 'input_ids': Counter(),
     }
 
     # iterate
