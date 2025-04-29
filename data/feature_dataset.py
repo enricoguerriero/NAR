@@ -1,57 +1,46 @@
 import os
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 class FeatureDataset(Dataset):
-    """
-    A Dataset for already-processed inputs saved as .pt files.
-    """
     def __init__(self, data_dir: str):
         self.data_dir = data_dir
+        self.samples = []  # List of (file, index_within_file)
+        
         all_files = sorted(os.listdir(data_dir))
-        self.files = []
         for f in all_files:
             path = os.path.join(data_dir, f)
             data = torch.load(path, weights_only=False)
-            features = data['labels']  
+            features = data['labels']
             if features.shape[0] == 2:
-                self.files.append(f)
-        
+                # Save two entries per file
+                self.samples.append((f, 0))
+                self.samples.append((f, 1))
+                
     def __len__(self):
-        return len(self.files)
+        return len(self.samples)
 
     def __getitem__(self, idx):
-        file_path = os.path.join(self.data_dir, self.files[idx])
-        data = torch.load(file_path, weights_only=False)
-        return data
-    
+        f, internal_idx = self.samples[idx]
+        path = os.path.join(self.data_dir, f)
+        data = torch.load(path, weights_only=False)
+        sample = {
+            'features': data['features'][internal_idx],
+            'labels': data['labels'][internal_idx]
+        }
+        return sample
+
     def weight_computation(self):
-        """
-        Computes the pos_weight vector for BCEWithLogitsLoss.
-        
-        Returns:
-            pos_weight (torch.Tensor): Tensor of shape (n_classes,) for BCEWithLogitsLoss.
-        """
         n_classes = 4
         pos_counts = torch.zeros(n_classes)
         
         for item in self:
-            label = item['labels']
-            label_tensor = label.clone().detach().float()
-            if label_tensor.dim() == 2:
-                label_sum = label_tensor.sum(dim=0)
-            else:
-                label_sum = label_tensor
-            pos_counts += label_sum
+            label = item['labels'].float()
+            pos_counts += label
 
         total = len(self)
         neg_counts = total - pos_counts
 
-        # Avoid division by zero
         raw_weight = neg_counts / (pos_counts + 1e-6)
-
         pos_weight = torch.clamp(raw_weight, max=10.0)
-
         return pos_weight
-
-    
