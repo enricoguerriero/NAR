@@ -43,7 +43,7 @@ def main():
 
     # Compute positive class weights
     print("Computing pos_weight for BCEWithLogitsLoss...")
-    pos_weight = dataset.weight_computation()
+    pos_weight = dataset.pos_weight
     print(f"pos_weight tensor: {pos_weight}\n")
 
     # Quick preview of raw sample structures
