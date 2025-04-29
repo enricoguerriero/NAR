@@ -8,8 +8,7 @@ class FeatureDataset(Dataset):
         self.samples = []  # List of (file, index_within_file)
         self.n_classes = 4
         
-        pos_counts = None
-        total_samples = 0
+        pos_counts = torch.zeros(self.n_classes, dtype=torch.float32)
         
         all_files = sorted(os.listdir(data_dir))
         for f in all_files:
@@ -22,12 +21,12 @@ class FeatureDataset(Dataset):
                 self.samples.append((f, 0))
                 self.samples.append((f, 1))
                 pos_counts += labels.sum(dim=0).float()
-                total_samples += 2
+                
                 
         self._pos_counts = pos_counts
-        self._total_samples = total_samples
+        self._total_samples = len(self)
         
-        neg_counts = total_samples - pos_counts
+        neg_counts = self._total_samples - pos_counts
         raw_weight = neg_counts / (pos_counts + 1e-6)
         
         self.pos_weight = torch.clamp(raw_weight, min=1.0, max=10.0)
@@ -46,17 +45,3 @@ class FeatureDataset(Dataset):
         }
         return sample
 
-    # def weight_computation(self):
-    #     n_classes = 4
-    #     pos_counts = torch.zeros(n_classes)
-        
-    #     for item in self:
-    #         label = item['labels'].float()
-    #         pos_counts += label
-
-    #     total = len(self)
-    #     neg_counts = total - pos_counts
-
-    #     raw_weight = neg_counts / (pos_counts + 1e-6)
-    #     pos_weight = torch.clamp(raw_weight, max=10.0)
-    #     return pos_weight
