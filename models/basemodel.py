@@ -344,15 +344,14 @@ class BaseModel(nn.Module):
         else:
             truths = truths.cpu().numpy().astype(int)
             preds = preds.cpu().numpy().astype(int)
-
-        correct = (truths == preds).sum(axis=0)
-        total = truths.shape[0]
-        acc_per_class = correct / total.clip(min=1)
         
         TP = ((preds == 1) & (truths == 1)).sum(axis=0)
         FP = ((preds == 1) & (truths == 0)).sum(axis=0)
         FN = ((preds == 0) & (truths == 1)).sum(axis=0)
         TN = ((preds == 0) & (truths == 0)).sum(axis=0)
+        
+        total = TP + FP + FN + TN
+        acc_per_class = (TP + TN) / total.clip(min=1)
         
         # precision/recall/f1 via sklearn
         p, r, f1, _ = precision_recall_fscore_support(
