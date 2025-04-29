@@ -67,10 +67,17 @@ def main():
     )
 
     print("Iterating data loader to inspect batch shapes:")
+    dimensions = {}
     for batch in loader:
         for key, tensor in batch.items():
             if isinstance(tensor, torch.Tensor):
-                print(f"Batch {key}: {tuple(tensor.shape)}")
+                if key not in dimensions:
+                    dimensions[key] = []
+                dimensions[key].append(tensor.shape)
+    for key, shapes in dimensions.items():
+        print(f"  - {key}: batch shapes = {shapes}")
+        if len(shapes) > 1:
+            print(f"    Warning: Different shapes detected for key '{key}' across batches.")
 
     print("\nScript completed successfully.")
 
