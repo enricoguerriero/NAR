@@ -333,11 +333,15 @@ class BaseModel(nn.Module):
         """
         Compute TP/FP/FN/TN and derived metrics for a multi-label task.
         """
-        print(f"Logits shape: {logits.shape}", flush=True)
-        print(f"Labels shape: {labels.shape}", flush=True)
+        
         # make everything boolean
         preds = (logits.sigmoid() >= threshold)
         truths = labels.bool()
+        
+        if truths.shape == 3:
+            n, m, C = truths.shape  # n=13376, m=2, C=4
+            truths = truths.cpu().numpy().reshape(n * m, C).astype(int)
+            preds = preds.cpu().numpy().reshape(n * m, C).astype(int)
 
         # now logical ops do what you expect
         TP =   (preds &  truths).sum(dim=0).cpu().numpy()
