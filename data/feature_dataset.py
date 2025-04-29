@@ -13,7 +13,7 @@ class FeatureDataset(Dataset):
         for f in all_files:
             path = os.path.join(data_dir, f)
             data = torch.load(path, weights_only=False)
-            features = data['pixel_values_videos']  # or whatever your key is
+            features = data['labels']  
             if features.shape[0] == 2:
                 self.files.append(f)
         
