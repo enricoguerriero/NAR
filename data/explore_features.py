@@ -40,16 +40,7 @@ def main(data_dir: str):
         print(f"  Class {i:>1} → pos: {pos:>4}, neg: {neg:>4}, pos_ratio: {ratio:.3f}")
 
     # compute BCEWithLogitsLoss weights and priors
-    # (we reimplement weight_computation here to handle file loading)
-    pos_counts_f = torch.zeros(n_classes, dtype=torch.float32)
-    for fname in dataset.files:
-        data = torch.load(os.path.join(data_dir, fname), weights_only=False)
-        pos_counts_f += data['labels'].float()
-    total = float(n_samples)
-    neg_counts_f = total - pos_counts_f
-    raw_w = neg_counts_f / (pos_counts_f + 1e-6)
-    pos_weight = torch.clamp(raw_w, min=0.0, max=10.0)
-    prior_prob = pos_counts_f / total
+    pos_weight, prior_prob = dataset.weight_computation()
 
     print("\nBCEWithLogitsLoss pos_weight:", pos_weight.tolist())
     print("Class prior probabilities:", prior_prob.tolist(), "\n")
