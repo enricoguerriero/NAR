@@ -16,8 +16,7 @@ class FeatureDataset(Dataset):
     def __getitem__(self, idx):
         file_path = os.path.join(self.data_dir, self.files[idx])
         data = torch.load(file_path, weights_only=False)
-        label = data['labels']
-        return data, label
+        return data
     
     def weight_computation(self):
         """
@@ -29,7 +28,8 @@ class FeatureDataset(Dataset):
         n_classes = 4
         pos_counts = torch.zeros(n_classes)
         
-        for _, label in self:
+        for item in self:
+            label = item['labels']
             label_tensor = label.clone().detach().float()
             if label_tensor.dim() == 2:
                 label_sum = label_tensor.sum(dim=0)
