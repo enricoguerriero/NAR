@@ -30,8 +30,12 @@ class FeatureDataset(Dataset):
         pos_counts = torch.zeros(n_classes)
         
         for _, label in self:
-            label_tensor = torch.tensor(label, dtype=torch.float32)
-            pos_counts += label_tensor
+            label_tensor = label.clone().detach().float()
+            if label_tensor.dim() == 2:
+                label_sum = label_tensor.sum(dim=0)
+            else:
+                label_sum = label_tensor
+            pos_counts += label_sum
 
         total = len(self)
         neg_counts = total - pos_counts
