@@ -9,6 +9,22 @@ class TokenDataset(Dataset):
     def __init__(self, data_dir: str):
         self.data_dir = data_dir
         self.files = sorted(f for f in os.listdir(data_dir) if f.endswith('.pt'))
+        self.n_classes = 4
+        self.pos_counts = torch.zeros(self.n_classes, dtype=torch.float32)
+        self._total_samples = len(self.files)
+        
+        for f in self.files:
+            path = os.path.join(data_dir, f)
+            data = torch.load(path, weights_only=False)
+            label = f.split("_")[-4:]
+            label = [int(x) for x in label]
+            label_tensor = torch.tensor(label)
+            self.pos_counts += label.sum(dim=0).float()
+        neg_counts = self._total_samples - self.pos_counts
+        raw_weight = neg_counts / (self.pos_counts + 1e-6)
+        self.raw_weight = raw_weight
+        self.pos_weight = torch.clamp(raw_weight, min=1.0, max=10.0)
+        self.prior_probability = self.pos_counts / self._total_samples
         
     def __len__(self):
         return len(self.files)
@@ -22,28 +38,3 @@ class TokenDataset(Dataset):
         label_tensor = torch.tensor(label)
         data['labels'] = label_tensor
         return data
-    
-    def weight_computation(self):
-        """
-        Computes the pos_weight vector for BCEWithLogitsLoss.
-        
-        Returns:
-            pos_weight (torch.Tensor): Tensor of shape (n_classes,) for BCEWithLogitsLoss.
-        """
-        n_classes = 4
-        pos_counts = torch.zeros(n_classes)
-        
-        for clip in self:
-            label_tensor = clip['labels']
-            pos_counts += label_tensor
-
-        total = len(self)
-        neg_counts = total - pos_counts
-
-        # Avoid division by zero
-        raw_weight = neg_counts / (pos_counts + 1e-6)
-
-        pos_weight = torch.clamp(raw_weight, max=10.0)
-        prior_probability = pos_counts / total 
-
-        return pos_weight, prior_probability
