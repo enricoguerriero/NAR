@@ -8,7 +8,14 @@ class FeatureDataset(Dataset):
     """
     def __init__(self, data_dir: str):
         self.data_dir = data_dir
-        self.files = sorted(os.listdir(data_dir))
+        all_files = sorted(os.listdir(data_dir))
+        self.files = []
+        for f in all_files:
+            path = os.path.join(data_dir, f)
+            data = torch.load(path, weights_only=False)
+            features = data['pixel_values_videos']  # or whatever your key is
+            if features.shape[0] == 2:
+                self.files.append(f)
         
     def __len__(self):
         return len(self.files)
