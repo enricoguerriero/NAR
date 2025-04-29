@@ -348,7 +348,7 @@ class BaseModel(nn.Module):
         
         # per-class accuracy
         total = TP + FP + FN + TN
-        acc_per_class = (TP + TN) / np.clip(total, min=1, a_max=None)
+        acc_per_class = (TP + TN) / np.clip(total, a_min=1, a_max=None)
 
         # precision/recall/f1 via sklearn
         p, r, f1, _ = precision_recall_fscore_support(
