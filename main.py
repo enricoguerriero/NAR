@@ -131,6 +131,7 @@ def main():
         logger.info("Token dataset created successfully.")
         logger.info("Testing model ...")
         model.test_model(test_dataloader = test_dataloader,
+                   criterion = criterion,
                    threshold = CONFIG["threshold"],
                    wandb_run = wandb_run)
         logger.info("Model tested successfully.")
