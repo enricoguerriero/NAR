@@ -11,7 +11,7 @@ from tqdm import tqdm
 import os
 
 # Import your dataset class (adjust the import path as needed)
-from FeatureDataset import FeatureDataset
+from data.feature_dataset import FeatureDataset
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Explore the FeatureDataset quickly.")
