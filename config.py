@@ -59,7 +59,7 @@ CONFIG = {
     "patience": 10,
     "epochs": 20,
     "threshold": 0.5,
-    "num_workers": 4,
+    "num_workers": 0,
     
     # 0 shot specific
     "prompt_0s": "Is the baby / mannequin visible? If yes, is the baby receiving ventilation? Is the baby being stimulated? Is the baby receiving suction?",
