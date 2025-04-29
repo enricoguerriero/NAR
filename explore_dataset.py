@@ -74,10 +74,12 @@ def main():
                 if key not in dimensions:
                     dimensions[key] = []
                 dimensions[key].append(tensor.shape)
+    # check if all the shapes for a specific key are the same
     for key, shapes in dimensions.items():
-        print(f"  - {key}: batch shapes = {shapes}")
-        if len(shapes) > 1:
-            print(f"    Warning: Different shapes detected for key '{key}' across batches.")
+        if len(set(shapes)) == 1:
+            print(f"  - {key}: consistent shape {shapes[0]}")
+        else:
+            print(f"  - {key}: inconsistent shapes {shapes}")
 
     print("\nScript completed successfully.")
 
