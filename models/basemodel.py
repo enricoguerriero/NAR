@@ -341,10 +341,13 @@ class BaseModel(nn.Module):
         print(f"Preds shape: {preds.shape}")
         print(f"Truths shape: {truths.shape}")
         
-        if truths.shape == 3:
+        if truths.dim() == 3:
             n, m, C = truths.shape  # n=13376, m=2, C=4
             truths = truths.cpu().numpy().reshape(n * m, C).astype(int)
             preds = preds.cpu().numpy().reshape(n * m, C).astype(int)
+        else:
+            truths = truths.cpu().numpy().astype(int)
+            preds = preds.cpu().numpy().astype(int)
         print(f"Reshaped preds shape: {preds.shape}")
         print(f"Reshaped truths shape: {truths.shape}")
 
@@ -360,8 +363,8 @@ class BaseModel(nn.Module):
 
         # precision/recall/f1 via sklearn
         p, r, f1, _ = precision_recall_fscore_support(
-            truths.cpu().numpy().astype(int),
-            preds.cpu().numpy().astype(int),
+            truths,
+            preds,
             average=None,
             zero_division=0
         )
