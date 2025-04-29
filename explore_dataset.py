@@ -45,6 +45,9 @@ def main():
     print("Computing pos_weight for BCEWithLogitsLoss...")
     pos_weight = dataset.pos_weight
     print(f"pos_weight tensor: {pos_weight}\n")
+    print(f"Raw positive weights: {dataset.raw_weight}")
+    print(f"Positive counts: {dataset._pos_counts}")
+    print(f"Negative counts: {dataset._total_samples - dataset._pos_counts}")
 
     # Quick preview of raw sample structures
     print(f"Previewing first {args.preview_samples} samples:")
