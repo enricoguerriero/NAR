@@ -13,7 +13,7 @@ from torch.nn.utils import clip_grad_norm_
 class VideoLlava(BaseModel):
     def __init__(self, checkpoint_path: str = None, base_model_id: str = "LanguageBind/Video-LLaVA-7B-hf", device=None, num_classes=4):
         super().__init__()
-        self.Amodel_name = "videollava"
+        self.model_name = "videollava"
         self.device = torch.device(device) if device else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         # Load the processor and model
