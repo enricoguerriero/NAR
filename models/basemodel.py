@@ -62,6 +62,7 @@ class BaseModel(nn.Module):
         
         with torch.no_grad():
             for step, batch in tqdm(enumerate(dataloader), total=len(dataloader), desc="Extracting features"):
+
                 pixel_values = batch.get("pixel_values_videos")
                 input_ids = batch.get("input_ids")
                 attention_mask = batch.get("attention_mask")
@@ -332,28 +333,26 @@ class BaseModel(nn.Module):
         """
         Compute TP/FP/FN/TN and derived metrics for a multi-label task.
         """
-
+        print(f"Logits shape: {logits.shape}", flush=True)
+        print(f"Labels shape: {labels.shape}", flush=True)
         # make everything boolean
-        logits_np = logits.detach().cpu().numpy()
-        y_true  = labels.detach().cpu().numpy().astype(int)
-
-        probs   = 1.0 / (1.0 + np.exp(-logits_np))
-        y_pred  = (probs >= threshold).astype(int)
+        preds = (logits.sigmoid() >= threshold)
+        truths = labels.bool()
 
         # now logical ops do what you expect
-        TP = np.logical_and(y_pred == 1, y_true == 1).sum(axis=0)
-        FP = np.logical_and(y_pred == 1, y_true == 0).sum(axis=0)
-        FN = np.logical_and(y_pred == 0, y_true == 1).sum(axis=0)
-        TN = np.logical_and(y_pred == 0, y_true == 0).sum(axis=0)
-        
+        TP =   (preds &  truths).sum(dim=0).cpu().numpy()
+        FP =   (preds & ~truths).sum(dim=0).cpu().numpy()
+        FN =  (~preds &  truths).sum(dim=0).cpu().numpy()
+        TN =  (~preds & ~truths).sum(dim=0).cpu().numpy()
+
         # per-class accuracy
         total = TP + FP + FN + TN
-        acc_per_class = (TP + TN) / np.clip(total, a_min=1, a_max=None)
+        acc_per_class = (TP + TN) / total.clip(min=1)
 
         # precision/recall/f1 via sklearn
         p, r, f1, _ = precision_recall_fscore_support(
-            y_true,
-            y_pred,
+            truths.cpu().numpy().astype(int),
+            preds.cpu().numpy().astype(int),
             average=None,
             zero_division=0
         )
@@ -364,10 +363,10 @@ class BaseModel(nn.Module):
             "precision":     p,
             "recall":        r,
             "f1":            f1,
-            "accuracy_macro":  float(acc_per_class.mean()),
-            "precision_macro": float(p.mean()),
-            "recall_macro":    float(r.mean()),
-            "f1_macro":        float(f1.mean())
+            "accuracy_macro":  acc_per_class.mean().item(),
+            "precision_macro": p.mean().item(),
+            "recall_macro":    r.mean().item(),
+            "f1_macro":        f1.mean().item()
         }
         return metrics
 
