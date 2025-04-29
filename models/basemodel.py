@@ -334,23 +334,26 @@ class BaseModel(nn.Module):
         """
 
         # make everything boolean
-        preds = (logits.sigmoid() >= threshold)
-        truths = labels.bool()
+        logits_np = logits.detach().cpu().numpy()
+        y_true  = labels.detach().cpu().numpy().astype(int)
+
+        probs   = 1.0 / (1.0 + np.exp(-logits_np))
+        y_pred  = (probs >= threshold).astype(int)
 
         # now logical ops do what you expect
-        TP =   (preds &  truths).sum(dim=0).cpu().numpy()
-        FP =   (preds & ~truths).sum(dim=0).cpu().numpy()
-        FN =  (~preds &  truths).sum(dim=0).cpu().numpy()
-        TN =  (~preds & ~truths).sum(dim=0).cpu().numpy()
-
+        TP = np.logical_and(y_pred == 1, y_true == 1).sum(axis=0)
+        FP = np.logical_and(y_pred == 1, y_true == 0).sum(axis=0)
+        FN = np.logical_and(y_pred == 0, y_true == 1).sum(axis=0)
+        TN = np.logical_and(y_pred == 0, y_true == 0).sum(axis=0)
+        
         # per-class accuracy
         total = TP + FP + FN + TN
-        acc_per_class = (TP + TN) / total.clip(min=1)
+        acc_per_class = (TP + TN) / np.clip(total, min=1, a_max=None)
 
         # precision/recall/f1 via sklearn
         p, r, f1, _ = precision_recall_fscore_support(
-            truths.cpu().numpy().astype(int),
-            preds.cpu().numpy().astype(int),
+            y_true,
+            y_pred,
             average=None,
             zero_division=0
         )
@@ -361,10 +364,10 @@ class BaseModel(nn.Module):
             "precision":     p,
             "recall":        r,
             "f1":            f1,
-            "accuracy_macro":  acc_per_class.mean().item(),
-            "precision_macro": p.mean().item(),
-            "recall_macro":    r.mean().item(),
-            "f1_macro":        f1.mean().item()
+            "accuracy_macro":  float(acc_per_class.mean()),
+            "precision_macro": float(p.mean()),
+            "recall_macro":    float(r.mean()),
+            "f1_macro":        float(f1.mean())
         }
         return metrics
 
