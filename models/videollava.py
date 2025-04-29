@@ -131,7 +131,7 @@ class VideoLlava(BaseModel):
             inputs = {k: v.to(self.device) for k, v in batch.items()}
             labels = inputs.pop("labels")
             with autocast(device_type='cuda'):
-                outputs = self.forward_classifier(**inputs, loss_fct=loss_fct)
+                outputs = self.forward_classifier(**inputs, labels = labels, loss_fct=loss_fct)
             loss = outputs["loss"]
             logits = outputs["logits"]
             labels_list.append(labels.cpu())
