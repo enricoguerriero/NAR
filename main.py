@@ -47,6 +47,10 @@ def main():
     logger.info(f"Model loaded: {model}")
     logger.info("-" * 20)
     
+    # POS WEIGHT AND CLASS PRIOR PROBABILITY HARDCODED SINCE TRAINING DATA DO NOT CHANGE
+    pos_weight = [0.19311390817165375, 2.532083511352539, 7.530612468719482, 6.510387420654297]
+    prior_probability = [0.8381429314613342, 0.2831190228462219, 0.11722487956285477, 0.1331489235162735]
+    
     if export_tokens:
         logger.info("Exporting tokens ...")
         for split in ["train", "validation", "test"]:
@@ -69,12 +73,21 @@ def main():
         from data.token_dataset import TokenDataset
         for split in ["train", "validation", "test"]:
             logger.info(f"Creating token dataset for {split} ...")
-            dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], model.model_name, split, f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
-            data_loader = DataLoader(dataset, batch_size = CONFIG["batch_size_feature"], shuffle = False, num_workers = CONFIG["num_workers"])
+            dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], 
+                                                           model.model_name,
+                                                           split, 
+                                                           f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
+            data_loader = DataLoader(dataset, 
+                                     batch_size = CONFIG["batch_size_feature"],
+                                     shuffle = False,
+                                     num_workers = CONFIG["num_workers"])
             logger.info(f"Token dataset for {split} created successfully.")
             logger.info(f"Exporting features for {split} ...")
             model.save_features(dataloader = data_loader,
-                                output_dir = os.path.join(CONFIG["feature_dir"], model.model_name, split, f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
+                                output_dir = os.path.join(CONFIG["feature_dir"],
+                                                          model.model_name, 
+                                                          split,
+                                                          f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
             logger.info(f"{split} features exported successfully.")
         logger.info("-" * 20)
          
@@ -82,10 +95,21 @@ def main():
         from data.token_dataset import TokenDataset
         logger.info("Training model ...")
         logger.info("Token dataset creation ...")
-        train_dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], model.model_name, "train", f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
-        train_dataloader = DataLoader(train_dataset, batch_size = CONFIG["batch_size"], shuffle = True, num_workers = CONFIG["num_workers"], collate_fn = collate_fn)
-        validation_dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], model.model_name, "validation", f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
-        validation_dataloader = DataLoader(validation_dataset, batch_size = CONFIG["batch_size"], shuffle = False, num_workers = CONFIG["num_workers"], collate_fn = collate_fn)
+        train_dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], 
+                                                             model.model_name, 
+                                                             "train", 
+                                                             f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
+        train_dataloader = DataLoader(train_dataset, batch_size = CONFIG["batch_size"], 
+                                      shuffle = True, num_workers = CONFIG["num_workers"], 
+                                      collate_fn = model.collate_fn_tokens)
+        validation_dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], 
+                                                                  model.model_name,
+                                                                  "validation", 
+                                                                  f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
+        validation_dataloader = DataLoader(validation_dataset, 
+                                           batch_size = CONFIG["batch_size"], 
+                                           shuffle = False, num_workers = CONFIG["num_workers"], 
+                                           collate_fn = model.collate_fn_tokens)
         logger.info("Token dataset created successfully.")
         logger.info("Training model ...")
         logger.info("Using the following parameters:")
@@ -101,7 +125,6 @@ def main():
                                            learning_rate = CONFIG["learning_rate"],
                                            momentum = CONFIG["momentum"],
                                            weight_decay = CONFIG["weight_decay"])
-        pos_weight, prior_probability = train_dataset.weight_computation()
         criterion = model.define_criterion(criterion_name = CONFIG["criterion"],
                                            pos_weight = pos_weight)
         scheduler = model.define_scheduler(scheduler_name = CONFIG["scheduler"],
@@ -126,8 +149,15 @@ def main():
     if test:
         logger.info("Testing model ...")
         logger.info("Token dataset creation ...")
-        test_dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"], model.model_name, "test", f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
-        test_dataloader = DataLoader(test_dataset, batch_size = CONFIG["batch_size"], shuffle = False, num_workers = CONFIG["num_workers"], collate_fn = collate_fn)
+        test_dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"],
+                                                            model.model_name,
+                                                            "test",
+                                                            f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
+        test_dataloader = DataLoader(test_dataset, 
+                                     batch_size = CONFIG["batch_size"], 
+                                     shuffle = False, 
+                                     num_workers = CONFIG["num_workers"],
+                                     collate_fn = model.collate_fn_tokens)
         logger.info("Token dataset created successfully.")
         logger.info("Testing model ...")
         model.test_model(test_dataloader = test_dataloader,
@@ -141,7 +171,6 @@ def main():
         logger.info("Training classifier ...")
         from data.feature_dataset import FeatureDataset
         train_dataset = FeatureDataset(data_dir = os.path.join(CONFIG["feature_dir"], model.model_name, "train"))
-        pos_weight = train_dataset.weight_computation()
         train_dataloader = DataLoader(train_dataset, batch_size = CONFIG["batch_size"], shuffle = True, num_workers = CONFIG["num_workers"])
         validation_dataset = FeatureDataset(data_dir = os.path.join(CONFIG["feature_dir"], model.model_name, "validation"))
         validation_dataloader = DataLoader(validation_dataset, batch_size = CONFIG["batch_size"], shuffle = False, num_workers = CONFIG["num_workers"])

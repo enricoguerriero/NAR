@@ -1,90 +1,76 @@
-#!/usr/bin/env python3
-"""
-A fast exploration script for the FeatureDataset class.
-Usage:
-    python explore_dataset.py --data_dir /path/to/pt_files --batch_size 128 --num_workers 8
-"""
-import argparse
-import torch
-from torch.utils.data import DataLoader
-from tqdm import tqdm
+#!/usr/bin/env python
 import os
+import argparse
+from collections import Counter
+import torch
+from feature_dataset import FeatureDataset  
 
-# Import your dataset class (adjust the import path as needed)
-from feature_dataset import FeatureDataset
-
-def parse_args():
-    parser = argparse.ArgumentParser(description="Explore the FeatureDataset quickly.")
-    parser.add_argument(
-        "--data_dir", type=str, required=True,
-        help="Directory containing .pt files for FeatureDataset"
-    )
-    parser.add_argument(
-        "--batch_size", type=int, default=64,
-        help="Batch size for DataLoader"
-    )
-    parser.add_argument(
-        "--num_workers", type=int, default=4,
-        help="Number of workers for DataLoader"
-    )
-    parser.add_argument(
-        "--preview_samples", type=int, default=5,
-        help="Number of individual samples to preview"
-    )
-    return parser.parse_args()
-
-def main():
-    args = parse_args()
-
-    # Initialize dataset
-    dataset = FeatureDataset(args.data_dir)
+def main(data_dir: str):
+    # load dataset
+    dataset = FeatureDataset(data_dir)
     n_samples = len(dataset)
-    print(f"Total samples in dataset: {n_samples}")
+    print(f"Total samples: {n_samples}\n")
 
-    # Compute positive class weights
-    print("Computing pos_weight for BCEWithLogitsLoss...")
-    pos_weight = dataset.pos_weight
-    print(f"pos_weight tensor: {pos_weight}\n")
-    print(f"Raw positive weights: {dataset.raw_weight}")
-    print(f"Positive counts: {dataset._pos_counts}")
-    print(f"Negative counts: {dataset._total_samples - dataset._pos_counts}")
+    # peek at one example to get keys
+    sample = dataset[0]
+    keys = list(sample.keys())
+    print("Data dictionary keys:", keys, "\n")
 
-    # Quick preview of raw sample structures
-    print(f"Previewing first {args.preview_samples} samples:")
-    for idx in range(min(args.preview_samples, n_samples)):
-        item = dataset[idx]
-        print(f"Sample {idx}: keys = {list(item.keys())}")
-        for key, tensor in item.items():
-            if isinstance(tensor, torch.Tensor):
-                print(f"  - {key}: shape={tuple(tensor.shape)}, dtype={tensor.dtype}, "
-                      f"min={tensor.min().item()}, max={tensor.max().item()}")
-        print()
+    # prepare counters
+    n_classes = sample['labels'].shape[0]
+    pos_counts = torch.zeros(n_classes, dtype=torch.int64)
+    # build a counter for each tensor key except labels
+    shape_counters = {k: Counter() for k in keys if k != 'labels'}
 
-    # Use DataLoader for batch-level inspection
-    loader = DataLoader(
-        dataset,
-        batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        pin_memory=True,
-        shuffle=False
-    )
+    # iterate through dataset
+    for item in dataset:
+        labels = item['labels']
+        pos_counts += labels.to(torch.int64)
+        for k in shape_counters:
+            tensor = item[k]
+            shape_counters[k][tuple(tensor.shape)] += 1
 
-    print("Iterating data loader to inspect batch shapes:")
-    dimensions = {}
-    for batch in loader:
-        for key, tensor in batch.items():
-            if isinstance(tensor, torch.Tensor):
-                if key not in dimensions:
-                    dimensions[key] = []
-                dimensions[key].append(tensor.shape)
-    # check if all the shapes for a specific key are the same
-    for key, shapes in dimensions.items():
-        if len(set(shapes)) == 1:
-            print(f"  - {key}: consistent shape {shapes[0]}")
-        else:
-            print(f"  - {key}: inconsistent shapes {set(shapes)}")
+    # negative counts and ratios
+    neg_counts = n_samples - pos_counts
+    print("Label summary per class:")
+    for i in range(n_classes):
+        pos = pos_counts[i].item()
+        neg = neg_counts[i].item()
+        ratio = pos / n_samples
+        print(f"  Class {i:>1} → pos: {pos:>4}, neg: {neg:>4}, pos_ratio: {ratio:.3f}")
 
-    print("\nScript completed successfully.")
+    # compute BCEWithLogitsLoss weights and priors
+    # (we reimplement weight_computation here to handle file loading)
+    pos_counts_f = torch.zeros(n_classes, dtype=torch.float32)
+    for fname in dataset.files:
+        data = torch.load(os.path.join(data_dir, fname), weights_only=False)
+        pos_counts_f += data['labels'].float()
+    total = float(n_samples)
+    neg_counts_f = total - pos_counts_f
+    raw_w = neg_counts_f / (pos_counts_f + 1e-6)
+    pos_weight = torch.clamp(raw_w, min=0.0, max=10.0)
+    prior_prob = pos_counts_f / total
+
+    print("\nBCEWithLogitsLoss pos_weight:", pos_weight.tolist())
+    print("Class prior probabilities:", prior_prob.tolist(), "\n")
+
+    # tensor shape distributions
+    print("Tensor shape distributions:")
+    for k, counter in shape_counters.items():
+        print(f"\n  {k}:")
+        for shape, count in counter.items():
+            print(f"    {shape}: {count} samples")
+
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Explore a directory of .pt files with FeatureDataset"
+    )
+    parser.add_argument(
+        "--data_dir",
+        type=str,
+        required=True,
+        help="Path to folder containing your .pt files",
+    )
+    args = parser.parse_args()
+    main(args.data_dir)

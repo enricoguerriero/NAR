@@ -178,3 +178,11 @@ class TimeSformer(BaseModel):
         labels_tensor = torch.cat(labels_list)
         avg_loss = total_loss / total_samples if total_samples > 0 else 0.0
         return avg_loss, logits_tensor, labels_tensor
+
+    def collate_fn_tokens(self, batch):
+        """
+        Collate function for DataLoader.
+        """
+        pixel_values = torch.cat([item["pixel_values"] for item in batch], dim=0)
+        labels = torch.stack([item["labels"] for item in batch], dim=0)
+        return {"pixel_values": pixel_values, "labels": labels}
