@@ -56,10 +56,12 @@ CONFIG = {
     "weight_decay": 0.01,
     "criterion": "wbce",
     "scheduler": "reduceonplateau",
+    "scheduler_patience": 5,
     "patience": 10,
     "epochs": 20,
     "threshold": 0.5,
     "num_workers": 0,
+    "freezing_condition": "none",
     
     # 0 shot specific
     "prompt_0s": "Is the baby / mannequin visible? If yes, is the baby receiving ventilation? Is the baby being stimulated? Is the baby receiving suction?",

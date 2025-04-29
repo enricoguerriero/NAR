@@ -9,33 +9,33 @@ def main():
     parser = ArgumentParser(description = "Train and test models for Newborn Activity Recognition")
     parser.add_argument("--model", type = str, default = "baseModel", help = "Model name")
     parser.add_argument("--checkpoint", type = str, default = None, help = "Path to the model checkpoint")
-    parser.add_argument("--train", action = "store_true", help = "Train the model")
-    parser.add_argument("--test", action = "store_true", help = "Test the model")
+    parser.add_argument("--train_from_tokens", action = "store_true", help = "Train the model from token dataset")
+    parser.add_argument("--test_from_tokens", action = "store_true", help = "Test the model from token datset")
     parser.add_argument("--export_tokens", action = "store_true", help = "Export tokens")
     parser.add_argument("--export_features", action = "store_true", help = "Export features")
-    parser.add_argument("--train_classifier", action = "store_true", help = "Train the classifier")
-    parser.add_argument("--test_classifier", action = "store_true", help = "Test the classifier")
+    parser.add_argument("--train_from_features", action = "store_true", help = "Train from features")
+    parser.add_argument("--test_from_features", action = "store_true", help = "Test from features")
     
     args = parser.parse_args()
     model_name = args.model
     checkpoint = args.checkpoint
-    train = args.train
-    test = args.test
     export_tokens = args.export_tokens
     export_features = args.export_features
-    train_classifier = args.train_classifier
-    test_classifier = args.test_classifier
+    train_from_tokens = args.train_from_tokens
+    test_from_tokens = args.test_from_tokens
+    train_from_features = args.train_from_features
+    test_from_features = args.test_from_features
     
     logger = setup_logging(model_name)
     logger.info("-" * 20)
     logger.info(f"Starting the main function with model: {model_name}")
-    logger.info(f"Checkpoint: {checkpoint}") 
-    logger.info(f"Train: {train}")
-    logger.info(f"Test: {test}")
-    logger.info(f"Train classifier: {train_classifier}")
-    logger.info(f"Test classifier: {test_classifier}")
+    logger.info(f"Checkpoint: {checkpoint}")
     logger.info(f"Export tokens: {export_tokens}")
     logger.info(f"Export features: {export_features}")
+    logger.info(f"Train from tokens: {train_from_tokens}")
+    logger.info(f"Test from tokens: {test_from_tokens}")
+    logger.info(f"Train from features: {train_from_features}")
+    logger.info(f"Test from features: {test_from_features}")
     logger.info("-" * 20)
     
     wandb_run = setup_wandb(model_name, CONFIG)
@@ -91,7 +91,7 @@ def main():
             logger.info(f"{split} features exported successfully.")
         logger.info("-" * 20)
          
-    if train:
+    if train_from_tokens:
         from data.token_dataset import TokenDataset
         logger.info("Training model ...")
         logger.info("Token dataset creation ...")
@@ -121,32 +121,28 @@ def main():
         logger.info(f"Patience: {CONFIG['patience']}")
         logger.info(f"Epochs: {CONFIG['epochs']}")
         logger.info(f"Threshold: {CONFIG['threshold']}")
-        optimizer = model.define_optimizer(optimizer_name = CONFIG["optimizer"],
-                                           learning_rate = CONFIG["learning_rate"],
-                                           momentum = CONFIG["momentum"],
-                                           weight_decay = CONFIG["weight_decay"])
-        criterion = model.define_criterion(criterion_name = CONFIG["criterion"],
-                                           pos_weight = pos_weight)
-        scheduler = model.define_scheduler(scheduler_name = CONFIG["scheduler"],
-                                           optimizer = optimizer,
-                                           epochs= CONFIG["epochs"],
-                                           patience = CONFIG["patience"])
-        model.train_model(train_dataloader = train_dataloader,
+        model.train_from_tokens(train_dataloader = train_dataloader,
                     val_dataloader = validation_dataloader,
                     epochs = CONFIG["epochs"],
-                    optimizer = optimizer,
-                    criterion = criterion,
+                    optimizer_name = CONFIG["optimizer"],
+                    learning_rate = CONFIG["learning_rate"],
+                    momentum = CONFIG["momentum"],
+                    weight_decay = CONFIG["weight_decay"],
+                    criterion_name = CONFIG["criterion"],
+                    pos_weight = pos_weight,
                     threshold = CONFIG["threshold"],
-                    scheduler = scheduler,
+                    scheduler_name = CONFIG["scheduler"],
+                    scheduler_patience = CONFIG["scheduler_patience"],
                     patience = CONFIG["patience"],
                     show_progress = True,
                     prior_probability = prior_probability,
                     wandb_run = wandb_run,
-                    logger = logger)
+                    logger = logger,
+                    freezing_condition= CONFIG["freezing_condition"])
         logger.info("Model trained successfully.")
         logger.info("-" * 20)
     
-    if test:
+    if test_from_tokens:
         logger.info("Testing model ...")
         logger.info("Token dataset creation ...")
         test_dataset = TokenDataset(data_dir = os.path.join(CONFIG["token_dir"],
@@ -160,20 +156,30 @@ def main():
                                      collate_fn = model.collate_fn_tokens)
         logger.info("Token dataset created successfully.")
         logger.info("Testing model ...")
-        model.test_model(test_dataloader = test_dataloader,
-                   criterion = criterion,
+        model.test_from_tokens(test_dataloader = test_dataloader,
+                   criterion_name = CONFIG["criterion"],
+                   pos_weight = pos_weight,
                    threshold = CONFIG["threshold"],
                    wandb_run = wandb_run)
         logger.info("Model tested successfully.")
         logger.info("-" * 20)
     
-    if train_classifier:
+    if train_from_features:
         logger.info("Training classifier ...")
         from data.feature_dataset import FeatureDataset
-        train_dataset = FeatureDataset(data_dir = os.path.join(CONFIG["feature_dir"], model.model_name, "train"))
-        train_dataloader = DataLoader(train_dataset, batch_size = CONFIG["batch_size"], shuffle = True, num_workers = CONFIG["num_workers"])
-        validation_dataset = FeatureDataset(data_dir = os.path.join(CONFIG["feature_dir"], model.model_name, "validation"))
-        validation_dataloader = DataLoader(validation_dataset, batch_size = CONFIG["batch_size"], shuffle = False, num_workers = CONFIG["num_workers"])
+        train_dataset = FeatureDataset(data_dir = os.path.join(CONFIG["feature_dir"], 
+                                                               model.model_name, 
+                                                               "train"))
+        train_dataloader = DataLoader(train_dataset, 
+                                      batch_size = CONFIG["batch_size"],
+                                      shuffle = True, 
+                                      num_workers = CONFIG["num_workers"])
+        validation_dataset = FeatureDataset(data_dir = os.path.join(CONFIG["feature_dir"],
+                                                                    model.model_name, "validation"))
+        validation_dataloader = DataLoader(validation_dataset, 
+                                           batch_size = CONFIG["batch_size"],
+                                           shuffle = False,
+                                           num_workers = CONFIG["num_workers"])
         logger.info("Classifier dataset created successfully.")
         logger.info("Training classifier ...")
         logger.info("Using the following parameters:")
@@ -208,11 +214,16 @@ def main():
         logger.info("Classifier trained successfully.")
         logger.info("-" * 20)
     
-    if test_classifier:
+    if test_from_features:
         logger.info("Testing classifier ...")
         from data.feature_dataset import FeatureDataset
-        test_dataset = FeatureDataset(data_dir = os.path.join(CONFIG["feature_dir"], model.model_name, "test"))
-        test_dataloader = DataLoader(test_dataset, batch_size = CONFIG["batch_size"], shuffle = False, num_workers = CONFIG["num_workers"])
+        test_dataset = FeatureDataset(data_dir = os.path.join(CONFIG["feature_dir"],
+                                                              model.model_name,
+                                                              "test"))
+        test_dataloader = DataLoader(test_dataset, 
+                                     batch_size = CONFIG["batch_size"],
+                                     shuffle = False,
+                                     num_workers = CONFIG["num_workers"])
         logger.info("Classifier dataset created successfully.")
         logger.info("Testing classifier ...")
         model.test_classifier(test_dataloader = test_dataloader,

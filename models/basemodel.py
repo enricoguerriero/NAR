@@ -443,96 +443,138 @@ class BaseModel(nn.Module):
         """
         To be implemented in subclasses.
         """
-        raise NotImplementedError("Subclasses must implement eval_epoch().")
+        raise NotImplementedError("Subclasses must implement eval_epoch().")    
         
-    def train_model(
+    def train_from_tokens(
         self,
         train_dataloader: DataLoader,
         val_dataloader: DataLoader | None = None,
         epochs: int = 5,
-        optimizer: torch.optim.Optimizer = None,
-        criterion: nn.Module = None,
+        optimizer_name: str = None,
+        learning_rate: float = 1e-4,
+        momentum: float = 0.9,
+        weight_decay: float = 1e-4,
+        criterion_name: str = None,
+        pos_weight: torch.Tensor = None,
         threshold: float = 0.5,
-        scheduler: lr_scheduler._LRScheduler = None,
+        scheduler_name: str = None,
+        scheduler_patience: int = 3,
         patience: int = 3,
         show_progress: bool = True,
         prior_probability: Tensor = None,
         wandb_run=None,
-        logger: logging.Logger = None
+        logger: logging.Logger = None,
+        freezing_condition: str = None
     ):
         """
         Train the model.
         """
         best_val_loss = float("inf")
         no_improve = 0
-        logger.info(f"Training {self.model_name} model")
+        logger.debug(f"Training {self.model_name} model")
+        
+        optimizer = self.define_optimizer(optimizer_name = optimizer_name,
+                                          learning_rate = learning_rate,
+                                          momentum = momentum,
+                                          weight_decay = weight_decay)
+        logger.debug(f"Optimizer defined: {optimizer_name}")
+        criterion = self.define_criterion(criterion_name = criterion_name,
+                                          pos_weight = pos_weight)
+        logger.debug(f"Criterion defined: {criterion_name}")
+        if val_dataloader is not None:
+            scheduler = self.define_scheduler(scheduler_name = scheduler_name,
+                                              optimizer = optimizer,
+                                              epochs = epochs,
+                                              patience = scheduler_patience)
+            logger.debug(f"Scheduler defined: {scheduler_name}")
+        else:
+            scheduler = None
+            logger.debug("No validation dataloader provided, no scheduler defined")
+        
+        unfreezing = self.set_freezing_condition(freezing_condition)
+        logger.debug("Freezing condition set")
                 
         bias = -(1 - prior_probability).log() + prior_probability.log()
         self.classifier.bias.data = bias.to(self.device)
-        logger.info(f"Initial bias for the model: {bias}")
+        logger.debug(f"Initial bias for the model: {bias}")
         
         epo_iter = tqdm(range(1, epochs + 1), desc="Epochs", unit="epoch") if show_progress else range(1, epochs + 1)
         
         for epoch in epo_iter:
-            logger.info(f"Starting epoch {epoch}/{epochs}")
+            
+            if unfreezing:
+                unfrozen = self.unfreeze_schedule(epoch, epochs)
+                logger.debug(f"Unfreezing schedule at epoch {epoch}")
+                if unfrozen:
+                    logger.debug(f"Unfreezing condition met at epoch {epoch}")
+                    optimizer = self.define_optimizer(optimizer_name = optimizer_name,
+                                                      learning_rate = learning_rate,
+                                                      momentum = momentum,
+                                                      weight_decay = weight_decay)
+                    scheduler = self.define_scheduler(scheduler_name = scheduler_name,
+                                                      optimizer = optimizer,
+                                                      epochs = epochs,
+                                                      patience = scheduler_patience)
+            
+            logger.debug(f"Starting epoch {epoch}/{epochs}")
             train_loss, train_logits, train_labels = self.train_epoch(train_dataloader, optimizer, criterion)
-            logger.info(f"Finished training epoch {epoch}")
-            logger.info(f"Train loss: {train_loss:.4f}")
+            logger.debug(f"Finished training epoch {epoch}")
+            logger.debug(f"Train loss: {train_loss:.4f}")
             
             log_msg = f"[{epoch:02d}/{epochs}] train-loss: {train_loss:.4f}"
             train_metrics = self.metric_computation(train_logits, train_labels, threshold)
             log_msg += f" | train-f1: {train_metrics['f1_macro']:.4f}"
-            logger.info(f"Train metrics: {train_metrics}")
+            logger.debug(f"Train metrics: {train_metrics}")
 
             if val_dataloader is not None:
-                logger.info(f"Starting validation epoch {epoch}")
+                logger.debug(f"Starting validation epoch {epoch}")
                 val_loss, val_logits, val_labels = self.eval_epoch(val_dataloader, criterion)
-                logger.info(f"Finished validation epoch {epoch}")
-                logger.info(f"Validation loss: {val_loss:.4f}")
+                logger.debug(f"Finished validation epoch {epoch}")
+                logger.debug(f"Validation loss: {val_loss:.4f}")
                 
                 log_msg += f" | val-loss: {val_loss:.4f}"
                 val_metrics = self.metric_computation(val_logits, val_labels, threshold)
                 log_msg += f" | val-f1: {val_metrics['f1_macro']:.4f}"
-                logger.info(f"Validation metrics: {val_metrics}")
+                logger.debug(f"Validation metrics: {val_metrics}")
                 
             if scheduler is not None:
                 if isinstance(scheduler, lr_scheduler.ReduceLROnPlateau):
                     scheduler.step(val_loss)
                 else:
                     scheduler.step()
-                logger.info(f"Scheduler step: {scheduler.get_last_lr()}")
+                logger.debug(f"Scheduler step: {scheduler.get_last_lr()}")
             if show_progress:
                 epo_iter.set_postfix_str(log_msg)
             if wandb_run is not None:
-                logger.info(f"Logging to Weights & Biases")
+                logger.debug(f"Logging to Weights & Biases")
                 self.log_wandb(wandb_run = wandb_run, 
                                epoch = epoch, 
                                train_loss = train_loss, 
                                train_metrics = train_metrics, 
                                val_loss = val_loss if val_dataloader is not None else None,
                                val_metrics = val_metrics if val_dataloader is not None else None)
-                logger.info(f"Finished logging to Weights & Biases")
-            logger.info(f"Saving checkpoint for epoch {epoch}")
+                logger.debug(f"Finished logging to Weights & Biases")
+            logger.debug(f"Saving checkpoint for epoch {epoch}")
             self.save_checkpoint(epoch = epoch,
                                  optimizer = optimizer,
                                  scheduler = scheduler)
-            logger.info(f"Finished saving checkpoint for epoch {epoch}")
+            logger.debug(f"Finished saving checkpoint for epoch {epoch}")
             
             if val_dataloader is not None and val_loss < best_val_loss:
                 best_val_loss = val_loss
                 no_improve = 0
-                logger.info(f"Validation loss improved to {best_val_loss:.4f} at epoch {epoch}")
+                logger.debug(f"Validation loss improved to {best_val_loss:.4f} at epoch {epoch}")
             else:
                 no_improve += 1
-                logger.info(f"No improvement in validation loss for {no_improve} epochs")
+                logger.debug(f"No improvement in validation loss for {no_improve} epochs")
                 if no_improve >= patience:
-                    logger.info(f"Early stopping at epoch {epoch} with patience {patience}.")
+                    logger.debug(f"Early stopping at epoch {epoch} with patience {patience}.")
                     break
         
-        logger.info(f"Training finished after {epoch} epochs")
-        logger.info("Saving final model")
+        logger.debug(f"Training finished after {epoch} epochs")
+        logger.debug("Saving final model")
         self.save_model()
-        logger.info("Final model saved")
+        logger.debug("Final model saved")
         
         results = {"train_loss": train_loss,
                    "train_metrics": train_metrics,
@@ -541,14 +583,17 @@ class BaseModel(nn.Module):
 
         return results
     
-    def test_model(self,
+    def test_from_tokens(self,
                    test_dataloader: DataLoader,
-                   criterion: nn.Module = None,
+                   criterion_name: str = None,
+                   pos_weight: torch.Tensor = None,
                    threshold: float = 0.5,
                    wandb_run=None):
         """
         Test the model.
         """
+        criterion = self.define_criterion(criterion_name = criterion_name,
+                                          pos_weight = pos_weight)
         test_loss, test_logits, test_labels = self.eval_epoch(test_dataloader, criterion)
         
         test_metrics = self.metric_computation(test_logits, test_labels, threshold)

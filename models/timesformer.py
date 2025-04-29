@@ -16,8 +16,7 @@ class TimeSformer(BaseModel):
                  base_model_id: str = "facebook/timesformer-base-finetuned-ssv2", 
                  device: str = "cuda", 
                  num_classes: int = 4,
-                 num_frames: int = 8,
-                 fine_tune_backbone: bool = False):
+                 num_frames: int = 8):
         """
         Initialize the TimeSformer model.
         """
@@ -28,6 +27,7 @@ class TimeSformer(BaseModel):
         config = TimesformerConfig.from_pretrained(base_model_id)
         self.processor = AutoImageProcessor.from_pretrained(base_model_id)
         self.backbone = TimesformerForVideoClassification.from_pretrained(base_model_id)
+        self.backbone.classifier = nn.Identity()
         self.backbone.gradient_checkpointing_enable() # Enable gradient checkpointing - save GPU memory
         
         if num_frames != 8:  # 8 = default number of frames for SSV2 pretraining
@@ -40,10 +40,6 @@ class TimeSformer(BaseModel):
         self.classifier = torch.nn.Linear(config.hidden_size, num_classes, bias=True)
         self.backbone.to(self.device)
         self.classifier.to(self.device)
-        
-        if not fine_tune_backbone:
-                for param in self.backbone.parameters():
-                    param.requires_grad = False
 
         
     def interpolate_pos_encoding(self, num_frames: int, img_size: int = 224, patch_size: int = 16):
@@ -186,3 +182,57 @@ class TimeSformer(BaseModel):
         pixel_values = torch.cat([item["pixel_values"] for item in batch], dim=0)
         labels = torch.stack([item["labels"] for item in batch], dim=0)
         return {"pixel_values": pixel_values, "labels": labels}
+    
+    def set_freezing_condition(self, freezing_condition: str = None):
+        """
+        Set the freezing condition for the model.
+        """
+        if freezing_condition == "all":
+            for param in self.backbone.parameters():
+                param.requires_grad = False
+            return False
+        elif freezing_condition == "none":
+            for param in self.backbone.parameters():
+                param.requires_grad = True
+            return False
+        elif freezing_condition == "partial":
+            for param in self.backbone.parameters():
+                param.requires_grad = False
+            return True
+        else:
+            return False
+        
+    def get_layer_groups(self):
+        """Return an *ordered list* of torch.nn.Module objects / ModuleLists."""
+        return [
+            self.classifier,                                          # 0
+            nn.ModuleList([self.backbone.timesformer.layernorm,
+                        self.backbone.timesformer.encoder.layer[-1]]),  # 1
+            nn.ModuleList(self.backbone.timesformer.encoder.layer[8:11]),  # 2
+            nn.ModuleList(self.backbone.timesformer.encoder.layer[4:8]),   # 3
+            nn.ModuleList(self.backbone.timesformer.encoder.layer[0:4]),   # 4
+            self.backbone.timesformer.embeddings                        # 5
+        ]
+    
+    def unfreeze_schedule(self, epoch, epochs):
+        """
+        Gradually UNfreeze groups as training progresses.
+
+        At 20 % of total epochs, group-1 is enabled,
+        at 40 % group-2, …, until every group is trainable.
+        """
+        # thresholds must be **sorted** from high-to-low or low-to-high
+        schedule = [(0.2, 1), (0.4, 2), (0.6, 3), (0.8, 4), (1.0, 5)]
+        groups = self.get_layer_groups()
+
+        changed_any = False
+        progress = epoch / epochs          # fraction in [0, 1]
+
+        for thresh, g_idx in schedule:
+            if progress >= thresh:         # we have passed this milestone
+                for m in groups[g_idx].modules():   # works for Module and ModuleList
+                    for p in m.parameters():
+                        if not p.requires_grad:
+                            p.requires_grad = True
+                            changed_any = True
+        return changed_any
