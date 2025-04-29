@@ -79,7 +79,7 @@ def main():
         if len(set(shapes)) == 1:
             print(f"  - {key}: consistent shape {shapes[0]}")
         else:
-            print(f"  - {key}: inconsistent shapes {shapes}")
+            print(f"  - {key}: inconsistent shapes {set(shapes)}")
 
     print("\nScript completed successfully.")
 
