@@ -192,7 +192,7 @@ class VideoLlava(BaseModel):
         scheduler: lr_scheduler = None,
         patience: int = 3,
         show_progress: bool = True,
-        wandb=None
+        wandb_run=None
     ):
         self.classifier.to(self.device)
         best_val_loss = float('inf')
@@ -223,8 +223,8 @@ class VideoLlava(BaseModel):
                     scheduler.step()
             if show_progress:
                 epo_iter.set_postfix_str(log_msg)
-            if wandb is not None:
-                self.log_wandb(wandb = wandb, 
+            if wandb_run is not None:
+                self.log_wandb(wandb = wandb_run, 
                                epoch = epoch, 
                                train_loss = train_loss, 
                                train_metrics = train_metrics, 
@@ -254,15 +254,15 @@ class VideoLlava(BaseModel):
         self,
         test_dataloader: DataLoader,
         threshold: float = 0.5,
-        wandb=None
+        wandb_run=None
     ):
         self.classifier.to(self.device)
         test_loss, logits, labels = self.eval_classifier_epoch(test_dataloader, None)
         
         test_metrics = self.metric_computation(logits, labels, threshold)        
         
-        if wandb is not None:
-            self.log_test_wandb(wandb = wandb, 
+        if wandb_run is not None:
+            self.log_test_wandb(wandb = wandb_run, 
                            test_loss = test_loss, 
                            test_metrics = test_metrics)
 
