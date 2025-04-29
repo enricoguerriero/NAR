@@ -224,7 +224,7 @@ class VideoLlava(BaseModel):
             if show_progress:
                 epo_iter.set_postfix_str(log_msg)
             if wandb_run is not None:
-                self.log_wandb(wandb = wandb_run, 
+                self.log_wandb(wandb_run = wandb_run, 
                                epoch = epoch, 
                                train_loss = train_loss, 
                                train_metrics = train_metrics, 
@@ -262,7 +262,7 @@ class VideoLlava(BaseModel):
         test_metrics = self.metric_computation(logits, labels, threshold)        
         
         if wandb_run is not None:
-            self.log_test_wandb(wandb = wandb_run, 
+            self.log_test_wandb(wandb_run = wandb_run, 
                            test_loss = test_loss, 
                            test_metrics = test_metrics)
 
