@@ -66,12 +66,11 @@ def main():
         shuffle=False
     )
 
-    print("Iterating one batch to inspect batch shapes:")
+    print("Iterating data loader to inspect batch shapes:")
     for batch in loader:
         for key, tensor in batch.items():
             if isinstance(tensor, torch.Tensor):
                 print(f"Batch {key}: {tuple(tensor.shape)}")
-        break  # only inspect the first batch
 
     print("\nScript completed successfully.")
 
