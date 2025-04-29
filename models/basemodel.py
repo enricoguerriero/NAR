@@ -63,18 +63,10 @@ class BaseModel(nn.Module):
         with torch.no_grad():
             for step, batch in tqdm(enumerate(dataloader), total=len(dataloader), desc="Extracting features"):
 
-                pixel_values = batch.get("pixel_values_videos")
-                input_ids = batch.get("input_ids")
-                attention_mask = batch.get("attention_mask")
+                labels = input.pop("labels")                    
+                input = self.get_input(batch)
                 
-                if pixel_values is not None:
-                    pixel_values = pixel_values.squeeze(1).to(self.device)
-                if input_ids is not None:
-                    input_ids = input_ids.squeeze(1).to(self.device)
-                    attention_mask = attention_mask.squeeze(1).to(self.device)
-
-                features = self.feature_extraction(pixel_values, input_ids, attention_mask)
-                labels = batch["labels"]
+                features = self.feature_extraction(**input)
                 data = {
                     "features": features.cpu(),
                     "labels": labels.cpu()

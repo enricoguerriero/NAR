@@ -99,6 +99,14 @@ class VideoLlava(BaseModel):
         
         return {"loss": loss, "logits": logits}
     
+    def get_input(self, batch):
+        """
+        Get the input tensors from the batch.
+        """
+        for key in batch:
+            batch[key] = batch[key].squeeze(0).to(self.device)
+        return batch
+    
     def feature_extraction(self, pixel_values=None, input_ids=None, attention_mask=None):
         """
         Extract features from the model.

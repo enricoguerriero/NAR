@@ -74,7 +74,7 @@ def main():
             logger.info(f"Token dataset for {split} created successfully.")
             logger.info(f"Exporting features for {split} ...")
             model.save_features(dataloader = data_loader,
-                                output_dir = os.path.join(CONFIG["feature_dir"], model.model_name, split))
+                                output_dir = os.path.join(CONFIG["feature_dir"], model.model_name, split, f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
             logger.info(f"{split} features exported successfully.")
         logger.info("-" * 20)
          
