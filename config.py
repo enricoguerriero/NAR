@@ -9,7 +9,7 @@ CONFIG = {
     "clip_length": 2,  # seconds
     "overlapping": 0.5,  # proportion of overlap
     "frame_per_second": 4,  # target FPS
-    "batch_size_feature": 2, # batch size for feature extraction (low because it runs the vlm)
+    "batch_size_feature": 1, # batch size for feature extraction (low because it runs the vlm)
     
     # VLM specific
     "prompt": "Is the baby / mannequin visible? If yes, is the baby receiving ventilation? Is the baby being stimulated? Is the baby receiving suction?",
