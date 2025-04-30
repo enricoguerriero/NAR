@@ -15,7 +15,7 @@ class TokenDataset(Dataset):
         
         for f in self.files:
             label = f.split("_")[-4:]
-            label = [int(x) for x in label]
+            label = [int(x.replace(".pt", "")) for x in label]
             self.pos_counts += label.sum(dim=0).float()
         neg_counts = self._total_samples - self.pos_counts
         raw_weight = neg_counts / (self.pos_counts + 1e-6)
