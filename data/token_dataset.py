@@ -22,7 +22,7 @@ class TokenDataset(Dataset):
         neg_counts = self._total_samples - self.pos_counts
         raw_weight = neg_counts / (self.pos_counts + 1e-6)
         self.raw_weight = raw_weight
-        self.pos_weight = torch.clamp(raw_weight, min=1.0, max=10.0)
+        self.pos_weight = torch.clamp(raw_weight, min=0.0, max=10.0)
         self.prior_probability = self.pos_counts / self._total_samples
         
     def __len__(self):
