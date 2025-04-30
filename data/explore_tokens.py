@@ -17,9 +17,9 @@ def main(data_dir: str):
     n_classes = sample['labels'].shape[0]
     pos_counts = torch.zeros(n_classes, dtype=torch.int64)
     shape_counters = {
-        'pixel_values': Counter(),
-        # 'attention_mask': Counter(),
-        # 'input_ids': Counter(),
+        'pixel_values_videos': Counter(),
+        'attention_mask': Counter(),
+        'input_ids': Counter(),
     }
 
     # iterate
