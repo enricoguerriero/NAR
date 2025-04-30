@@ -31,7 +31,7 @@ class TokenDataset(Dataset):
         data = torch.load(file_path, weights_only=False)
         name, _ = os.path.splitext(self.files[idx])
         label = name.split("_")[-4:]
-        label = [int(x) for x in label]
+        label = [int(x.replace(".pt", "")) for x in label]
         label_tensor = torch.tensor(label)
         data['labels'] = label_tensor
         return data
