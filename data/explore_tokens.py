@@ -40,7 +40,7 @@ def main(data_dir: str):
         print(f"  Class {i:>1} → pos: {pos:>4}, neg: {neg:>4}, pos_ratio: {ratio:.3f}")
 
     # weight computation
-    pos_weight, prior_prob = dataset.weight_computation()
+    pos_weight, prior_prob = dataset.pos_weight, dataset.prior_probability
     print("\nBCEWithLogitsLoss pos_weight:", pos_weight.tolist())
     print("Class prior probabilities:", prior_prob.tolist(), "\n")
 
