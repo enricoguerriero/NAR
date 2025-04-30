@@ -40,8 +40,8 @@ def objective(trial: optuna.Trial) -> float:
         momentum = trial.suggest_uniform('momentum', 0.0, 0.99)
 
     criterion_name = "wbce"
-    pos_weight = [0.19311390817165375, 2.532083511352539, 7.530612468719482, 6.510387420654297].to(device=DEVICE)
-    prior_probability = [0.8381429314613342, 0.2831190228462219, 0.11722487956285477, 0.1331489235162735].to(device=DEVICE)
+    pos_weight = torch.tensor([0.19311390817165375, 2.532083511352539, 7.530612468719482, 6.510387420654297]).to(device=DEVICE)
+    prior_probability = torch.tensor([0.8381429314613342, 0.2831190228462219, 0.11722487956285477, 0.1331489235162735]).to(device=DEVICE)
     
     threshold = trial.suggest_float('threshold', 0.3, 0.7)
 
