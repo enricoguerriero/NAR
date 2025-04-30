@@ -63,7 +63,7 @@ class BaseModel(nn.Module):
         with torch.no_grad():
             for step, batch in tqdm(enumerate(dataloader), total=len(dataloader), desc="Extracting features"):
 
-                labels = input.pop("labels")                    
+                labels = batch.pop("labels")
                 input = self.get_input(batch)
                 
                 features = self.feature_extraction(**input)
