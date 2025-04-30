@@ -122,8 +122,8 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
     logger.info("Starting Optuna trial.")
     # Load datasets
-    train_dataset = TokenDataset('data/tokens/TimeSformer/train')
-    val_dataset = TokenDataset('data/tokens/TimeSformer/validation')
+    train_dataset = TokenDataset('data/tokens/TimeSformer/train/2sec_4fps')
+    val_dataset = TokenDataset('data/tokens/TimeSformer/validation/2sec_4fps')
     train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=4, collate_fn=collate_fn)
     val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False, num_workers=4, collate_fn=collate_fn)
     # Create study and optimize
