@@ -14,7 +14,8 @@ class TokenDataset(Dataset):
         self._total_samples = len(self.files)
         
         for f in self.files:
-            label = f.split("_")[-4:]
+            name = os.path.splitext(f)[0]
+            label = name.split("_")[-4:]
             label = [int(x.replace(".pt", "")) for x in label]
             label = torch.tensor(label)
             self.pos_counts += label.float()
@@ -32,7 +33,7 @@ class TokenDataset(Dataset):
         data = torch.load(file_path, weights_only=False)
         name, _ = os.path.splitext(self.files[idx])
         label = name.split("_")[-4:]
-        label = [int(x.replace(".pt", "")) for x in label]
+        label = [int(x) for x in label]
         label_tensor = torch.tensor(label)
         data['labels'] = label_tensor
         return data
