@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from utils import load_model, setup_logging, setup_wandb, collate_fn
 from config import CONFIG
 from torch.utils.data import DataLoader
+import torch
 
 def main():
     
@@ -48,8 +49,8 @@ def main():
     logger.info("-" * 20)
     
     # POS WEIGHT AND CLASS PRIOR PROBABILITY HARDCODED SINCE TRAINING DATA DO NOT CHANGE
-    pos_weight = [0.19311390817165375, 2.532083511352539, 7.530612468719482, 6.510387420654297]
-    prior_probability = [0.8381429314613342, 0.2831190228462219, 0.11722487956285477, 0.1331489235162735]
+    pos_weight = torch.tensor([0.19311390817165375, 2.532083511352539, 7.530612468719482, 6.510387420654297])
+    prior_probability = torch.tensor([0.8381429314613342, 0.2831190228462219, 0.11722487956285477, 0.1331489235162735])
     
     if export_tokens:
         logger.info("Exporting tokens ...")
