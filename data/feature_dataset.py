@@ -12,9 +12,13 @@ class FeatureDataset(Dataset):
         return len(self.files)
 
     def __getitem__(self, idx):
-        file_path = os.path.join(self.data_dir, self.files[idx])
-        data = torch.load(file_path, weights_only=False)
-        return data
+        try:
+            file_path = os.path.join(self.data_dir, self.files[idx])
+            data = torch.load(file_path, weights_only=False)
+            return data
+        except Exception as e:
+            print(f"Error loading file {self.files[idx]}: {e}")
+            return None
 
     def weight_computation(self):
         """
