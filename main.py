@@ -174,13 +174,15 @@ def main():
         train_dataloader = DataLoader(train_dataset, 
                                       batch_size = CONFIG["batch_size"],
                                       shuffle = True, 
-                                      num_workers = CONFIG["num_workers"])
+                                      num_workers = CONFIG["num_workers"],
+                                      drop_last = True)
         validation_dataset = FeatureDataset(data_dir = os.path.join(CONFIG["feature_dir"],
                                                                     model.model_name, "validation"))
         validation_dataloader = DataLoader(validation_dataset, 
                                            batch_size = CONFIG["batch_size"],
                                            shuffle = False,
-                                           num_workers = CONFIG["num_workers"])
+                                           num_workers = CONFIG["num_workers"],
+                                           drop_last = True)
         logger.info("Classifier dataset created successfully.")
         logger.info("Training classifier ...")
         logger.info("Using the following parameters:")
@@ -224,7 +226,8 @@ def main():
         test_dataloader = DataLoader(test_dataset, 
                                      batch_size = CONFIG["batch_size"],
                                      shuffle = False,
-                                     num_workers = CONFIG["num_workers"])
+                                     num_workers = CONFIG["num_workers"],
+                                     drop_last = True)
         logger.info("Classifier dataset created successfully.")
         logger.info("Testing classifier ...")
         model.test_classifier(test_dataloader = test_dataloader,
