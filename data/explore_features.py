@@ -10,6 +10,8 @@ def main(data_dir: str):
     dataset = FeatureDataset(data_dir)
     n_samples = len(dataset)
     print(f"Total samples: {n_samples}\n")
+    
+    check_label_shapes(dataset)
 
     # peek at one example to get keys
     sample = dataset[0]
@@ -52,6 +54,15 @@ def main(data_dir: str):
         for shape, count in counter.items():
             print(f"    {shape}: {count} samples")
 
+def check_label_shapes(dataset):
+    print("Checking label shapes across dataset...")
+    shape_counter = Counter()
+    for i, item in enumerate(dataset):
+        shape = tuple(item['labels'].shape)
+        shape_counter[shape] += 1
+    print("Label shapes found:")
+    for shape, count in shape_counter.items():
+        print(f"  Shape {shape}: {count} samples")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
