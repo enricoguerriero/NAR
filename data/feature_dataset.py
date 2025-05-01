@@ -24,7 +24,8 @@ class FeatureDataset(Dataset):
         total_samples = len(self.files)
         
         for f in self.files:
-            label = f["labels"]
+            data = torch.load(os.path.join(self.data_dir, f), weights_only=False)
+            label = data["labels"]
             pos_counts += label.float()
         
         neg_counts = total_samples - pos_counts
