@@ -58,7 +58,7 @@ CONFIG = {
     "scheduler": "reduceonplateau",
     "scheduler_patience": 5,
     "patience": 10,
-    "epochs": 20,
+    "epochs": 50,
     "threshold": 0.5,
     "num_workers": 0,
     "freezing_condition": "none",
