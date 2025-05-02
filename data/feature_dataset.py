@@ -30,7 +30,7 @@ class FeatureDataset(Dataset):
         for f in self.files:
             data = torch.load(os.path.join(self.data_dir, f), weights_only=False)
             label = data["labels"]
-            pos_counts += label.float()
+            pos_counts += label.squeeze(0).float()
         
         neg_counts = total_samples - pos_counts
         raw_weight = neg_counts / (pos_counts + 1e-6)

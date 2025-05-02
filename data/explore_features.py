@@ -28,8 +28,6 @@ def main(data_dir: str):
     # iterate through dataset
     for item in dataset:
         labels = item['labels'].view(-1)
-        print(f"Labels shape: {labels.shape}", flush=True)
-        print(f"Labels: {labels.tolist()}", flush=True)
         pos_counts += labels.to(torch.int64)
         for k in shape_counters:
             tensor = item[k]
