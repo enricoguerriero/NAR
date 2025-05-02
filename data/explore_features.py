@@ -20,7 +20,7 @@ def main(data_dir: str):
     print("Data dictionary keys:", keys, "\n", flush=True)
 
     # prepare counters
-    n_classes = sample['labels'].shape[0]
+    n_classes = sample['labels'].view(-1).shape[0]
     pos_counts = torch.zeros(n_classes, dtype=torch.int64)
     # build a counter for each tensor key except labels
     shape_counters = {k: Counter() for k in keys if k != 'labels'}
