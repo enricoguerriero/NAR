@@ -26,7 +26,7 @@ def main(data_dir: str):
 
     # iterate through dataset
     for item in dataset:
-        labels = item['labels']
+        labels = item['labels'].squeeze(0)
         pos_counts += labels.to(torch.int64)
         for k in shape_counters:
             tensor = item[k]
