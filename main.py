@@ -170,14 +170,16 @@ def main():
         from data.feature_dataset import FeatureDataset
         train_dataset = FeatureDataset(data_dir = os.path.join(CONFIG["feature_dir"], 
                                                                model.model_name, 
-                                                               "train"))
+                                                               "train",
+                                                               f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
         train_dataloader = DataLoader(train_dataset, 
                                       batch_size = CONFIG["batch_size"],
                                       shuffle = True, 
                                       num_workers = CONFIG["num_workers"],
                                       drop_last = True)
         validation_dataset = FeatureDataset(data_dir = os.path.join(CONFIG["feature_dir"],
-                                                                    model.model_name, "validation"))
+                                                                    model.model_name, "validation",
+                                                                    f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
         validation_dataloader = DataLoader(validation_dataset, 
                                            batch_size = CONFIG["batch_size"],
                                            shuffle = False,
@@ -222,7 +224,8 @@ def main():
         from data.feature_dataset import FeatureDataset
         test_dataset = FeatureDataset(data_dir = os.path.join(CONFIG["feature_dir"],
                                                               model.model_name,
-                                                              "test"))
+                                                              "test",
+                                                              f'{CONFIG["clip_length"]}sec_{CONFIG["frame_per_second"]}fps'))
         test_dataloader = DataLoader(test_dataset, 
                                      batch_size = CONFIG["batch_size"],
                                      shuffle = False,
