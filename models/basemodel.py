@@ -490,6 +490,10 @@ class BaseModel(nn.Module):
         
         unfreezing = self.set_freezing_condition(freezing_condition)
         logger.debug("Freezing condition set")
+        logger.debug(f'Training parameters: {sum(p.numel() for p in self.parameters() if p.requires_grad)}')
+        logger.debug(f'Training parameters in classifier: {sum(p.numel() for p in self.classifier.parameters() if p.requires_grad)}')
+        logger.debug(f'Training parameters with lora: {sum(p.numel() for p in self.parameters() if p.requires_grad and p.ndim == 1)}')
+        logger.debug(f'Total parameters: {sum(p.numel() for p in self.parameters())}')
                 
         prior_probability = prior_probability.clamp_min(1e-6).clamp_max(1 - 1e-6)
         bias = -(1 - prior_probability).log() + prior_probability.log()
@@ -501,18 +505,13 @@ class BaseModel(nn.Module):
         for epoch in epo_iter:
             
             if unfreezing:
-                unfrozen = self.unfreeze_schedule(epoch, epochs)
+                new_params = self.unfreeze_schedule(epoch, epochs)
                 logger.debug(f"Unfreezing schedule at epoch {epoch}")
-                if unfrozen:
+                if new_params:
                     logger.debug(f"Unfreezing condition met at epoch {epoch}")
-                    optimizer = self.define_optimizer(optimizer_name = optimizer_name,
-                                                      learning_rate = learning_rate,
-                                                      momentum = momentum,
-                                                      weight_decay = weight_decay)
-                    scheduler = self.define_scheduler(scheduler_name = scheduler_name,
-                                                      optimizer = optimizer,
-                                                      epochs = epochs,
-                                                      patience = scheduler_patience)
+                    optimizer.add_param_group({"params": new_params})
+                    scheduler.optimizer = optimizer
+                logger.debug(f"Training parameters: {sum(p.numel() for p in self.parameters() if p.requires_grad)}")
             
             logger.debug(f"Starting epoch {epoch}/{epochs}")
             train_loss, train_logits, train_labels = self.train_epoch(train_dataloader, optimizer, criterion)

@@ -100,19 +100,33 @@ class VideoLlava(BaseModel):
         return inputs
     
     
-    def set_freezing_condition(self, freezing_condition: str):
-        
-        if freezing_condition == "all":
-            for name, param in self.backbone.named_parameters():
-                if "classifier" not in name:
-                    param.requires_grad = False
-        elif freezing_condition == "none":
-            for name, param in self.backbone.named_parameters():
+    def set_freezing_condition(self, mode: str):
+        # 1) freeze everything
+        for param in self.parameters():
+            param.requires_grad = False
+
+        # 2) unfreeze based on mode
+        if mode == "none":
+            # full fine-tuning: unfreeze every param
+            for param in self.parameters():
                 param.requires_grad = True
-        elif freezing_condition == "lora_":
+
+        elif mode == "all":
+            # only the classification head
+            for param in self.classifier.parameters():
+                param.requires_grad = True
+
+        elif mode == "lora":
+            # only LoRA adapters + classification head
             for name, param in self.backbone.named_parameters():
-                if "classifier" not in name and "lora" not in name:
-                    param.requires_grad = False
+                if "lora_" in name:
+                    param.requires_grad = True
+            for param in self.classifier.parameters():
+                param.requires_grad = True
+
+        else:
+            raise ValueError(f"Unknown freezing mode: {mode!r}")
+
         return False
     
     def unfreeze_schedule(self, x):

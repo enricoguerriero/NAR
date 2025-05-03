@@ -225,8 +225,8 @@ class TimeSformer(BaseModel):
         schedule = [(0.2, 1), (0.4, 2), (0.6, 3), (0.8, 4), (1.0, 5)]
         groups = self.get_layer_groups()
 
-        changed_any = False
-        progress = epoch / epochs          # fraction in [0, 1]
+        progress = epoch / epochs
+        newly_unfrozen = []
 
         for thresh, g_idx in schedule:
             if progress >= thresh:         # we have passed this milestone
@@ -234,5 +234,5 @@ class TimeSformer(BaseModel):
                     for p in m.parameters():
                         if not p.requires_grad:
                             p.requires_grad = True
-                            changed_any = True
-        return changed_any
+                            newly_unfrozen.append(p)
+        return newly_unfrozen
