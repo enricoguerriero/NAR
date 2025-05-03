@@ -598,7 +598,7 @@ class BaseModel(nn.Module):
                 
             if scheduler is not None:
                 if isinstance(scheduler, lr_scheduler.ReduceLROnPlateau):
-                    scheduler.step(val_loss)
+                    scheduler.step(val_metrics["f1_macro"] if val_dataloader is not None else train_metrics["f1_macro"])
                 else:
                     scheduler.step()
                 logger.debug(f"Scheduler step: {scheduler.get_last_lr()}")
