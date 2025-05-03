@@ -12,6 +12,7 @@ from torch import Tensor
 from torch.optim import lr_scheduler
 import wandb
 from torch.amp import GradScaler, autocast
+from torch.nn.utils import clip_grad_norm_
 
 class BaseModel(nn.Module):
     """
@@ -459,7 +460,7 @@ class BaseModel(nn.Module):
             
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(self.parameters(), max_grad_norm)
+            clip_grad_norm_(self.parameters(), max_grad_norm)
             scaler.step(optimizer)
             scaler.update()
             
@@ -664,10 +665,3 @@ class BaseModel(nn.Module):
         return {"test_loss": test_loss,
                 "test_metrics": test_metrics}
         
-    def collate_fn_tokens(self, batch):
-        """
-        Collate function for DataLoader.
-        """
-        pixel_values = torch.cat([item["pixel_values"] for item in batch], dim=0)
-        labels = torch.stack([item["labels"] for item in batch], dim=0)
-        return {"pixel_values": pixel_values, "labels": labels}

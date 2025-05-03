@@ -228,3 +228,11 @@ class TimeSformer(BaseModel):
                             p.requires_grad = True
                             newly_unfrozen.append(p)
         return newly_unfrozen
+    
+    def collate_fn_tokens(self, batch):
+        """
+        Collate function for DataLoader.
+        """
+        pixel_values = torch.cat([item["pixel_values"] for item in batch], dim=0)
+        labels = torch.stack([item["labels"] for item in batch], dim=0)
+        return {"pixel_values": pixel_values, "labels": labels}
