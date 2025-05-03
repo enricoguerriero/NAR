@@ -450,7 +450,7 @@ class BaseModel(nn.Module):
             labels = batch.pop("labels").to(self.device)
             
             
-            with autocast():
+            with autocast(device_type='cuda'):
                 outputs = self.forward(**batch, labels = labels, loss_fct = criterion)
                 loss = outputs["loss"]
                 logits = outputs["logits"]
