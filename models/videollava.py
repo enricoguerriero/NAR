@@ -60,9 +60,9 @@ class VideoLlava(BaseModel):
     def forward(self, pixel_values=None, input_ids=None, attention_mask=None, labels=None, loss_fct=None):
         
         outputs = self.backbone(
-            pixel_values_videos=pixel_values,
-            input_ids=input_ids,
-            attention_mask=attention_mask,
+            pixel_values_videos=pixel_values.to(self.device),
+            input_ids=input_ids.to(self.device),
+            attention_mask=attention_mask.to(self.device),
             return_dict=True,
             output_hidden_states=True,
         )

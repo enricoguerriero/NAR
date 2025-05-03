@@ -11,6 +11,7 @@ from sklearn.metrics import precision_recall_fscore_support
 from torch import Tensor
 from torch.optim import lr_scheduler
 import wandb
+from torch.amp import GradScaler, autocast
 
 class BaseModel(nn.Module):
     """
@@ -425,22 +426,79 @@ class BaseModel(nn.Module):
         if test_loss is not None:
             final_log["test/loss"] = test_loss
         wandb_run.log(final_log)
-        
-    def train_epoch(self, dataloader: DataLoader, optimizer: torch.optim.Optimizer, criterion: nn.Module, max_grad_norm=1.0):
-        """
-        To be implemented in subclasses.
-        """
-        raise NotImplementedError("Subclasses must implement train_epoch().")
-
-    def eval_epoch(self, dataloader: DataLoader, criterion: nn.Module):
-        """
-        To be implemented in subclasses.
-        """
-        raise NotImplementedError("Subclasses must implement eval_epoch().")    
+ 
         
         
         
     # ----------------- Training and Testing ---------------- #
+        
+    def train_epoch(self, dataloader: DataLoader, optimizer: torch.optim.Optimizer, criterion: nn.Module, max_grad_norm=1.0):
+        """
+        Train the model for one epoch.
+        """
+        self.train()
+        total_loss = 0.0
+        total_samples = 0
+        labels_list = []
+        logits_list = []
+        
+        scaler  = GradScaler()
+        
+        for batch in tqdm(dataloader, desc="Training", unit="batch"):
+            optimizer.zero_grad()
+            labels = batch.pop("labels").to(self.device)
+            
+            
+            with autocast():
+                outputs = self.forward(**batch, labels = labels, loss_fct = criterion)
+                loss = outputs["loss"]
+                logits = outputs["logits"]
+                
+            labels_list.append(labels.cpu())
+            logits_list.append(logits.cpu())    
+            
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(self.parameters(), max_grad_norm)
+            scaler.step(optimizer)
+            scaler.update()
+            
+            total_loss += loss.item() * labels.size(0)
+            total_samples += labels.size(0)
+            
+        logits_tensor = torch.cat(logits_list)
+        labels_tensor = torch.cat(labels_list)
+        avg_loss = total_loss / total_samples if total_samples > 0 else 0.0
+        return avg_loss, logits_tensor, labels_tensor
+    
+    def eval_epoch(self, dataloader: DataLoader, criterion: nn.Module):
+        """
+        Evaluate the model for one epoch.
+        """
+        self.eval()
+        total_loss = 0.0
+        total_samples = 0
+        labels_list = []
+        logits_list = []
+        
+        with torch.no_grad():
+            for batch in tqdm(dataloader, desc="Evaluating", unit="batch"):
+                labels = batch.pop("labels").to(self.device)
+                outputs = self.forward(**batch, labels = labels, loss_fct = criterion)
+                loss = outputs["loss"]
+                logits = outputs["logits"]
+                
+                labels_list.append(labels.cpu())
+                logits_list.append(logits.cpu())    
+                
+                total_loss += loss.item() * labels.size(0)
+                total_samples += labels.size(0)
+                
+        logits_tensor = torch.cat(logits_list)
+        labels_tensor = torch.cat(labels_list)
+        avg_loss = total_loss / total_samples if total_samples > 0 else 0.0
+        return avg_loss, logits_tensor, labels_tensor
+        
         
     def train_from_tokens(
         self,
