@@ -6,7 +6,7 @@ import re
 import torch.nn as nn
 from peft import LoraConfig, get_peft_model, TaskType
 
-class SmolVLMEngine(BaseModel):
+class SmolVLM(BaseModel):
     """
     A wrapper for the smolvlm model that encapsulates loading the processor and model,
     as well as generating answers from prompts.
