@@ -3,6 +3,8 @@ import logging
 import wandb
 import time
 import torch
+import random
+import numpy as np
 
 def load_model(model_name: str, checkpoint: str):
     """
@@ -70,3 +72,14 @@ def collate_fn(batch):
     pv = torch.cat([item["pixel_values"] for item in batch], dim=0)  # merges the 1-dim into B
     lbl = torch.stack([item["labels"] for item in batch], dim=0)
     return {"pixel_values": pv, "labels": lbl}
+
+
+def set_global_seed(seed: int = 42):
+    """Set seeds for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False

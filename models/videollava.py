@@ -9,6 +9,7 @@ import os
 from torch.optim import Optimizer, lr_scheduler
 from torch.amp import autocast, GradScaler
 from torch.nn.utils import clip_grad_norm_
+from peft import LoraConfig, get_peft_model, TaskType
 
 class VideoLlava(BaseModel):
     def __init__(self, checkpoint_path: str = None, base_model_id: str = "LanguageBind/Video-LLaVA-7B-hf", device=None, num_classes=4):
@@ -29,8 +30,20 @@ class VideoLlava(BaseModel):
                 torch_dtype=torch.float16
             ).to(self.device)
 
-        hidden_size = self.backbone.get_input_embeddings().embedding_dim
+        lora_config = LoraConfig(
+            r=8,
+            lora_alpha=16,
+            target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
+            lora_dropout=0.05,
+            bias="none",
+            task_type=TaskType.CAUSAL_LM
+        )
+        self.backbone.language_model = get_peft_model(
+            self.backbone.language_model,
+            lora_config
+        )
 
+        hidden_size = self.backbone.get_input_embeddings().embedding_dim
         self.classifier = nn.Sequential(
             nn.Linear(hidden_size, 512),
             nn.ReLU(),
@@ -85,6 +98,30 @@ class VideoLlava(BaseModel):
             return_tensors = "pt")
         
         return inputs
+    
+    
+    def set_freezing_condition(self, freezing_condition: str):
+        
+        if freezing_condition == "all":
+            for name, param in self.backbone.named_parameters():
+                if "classifier" not in name:
+                    param.requires_grad = False
+        elif freezing_condition == "none":
+            for name, param in self.backbone.named_parameters():
+                param.requires_grad = True
+        elif freezing_condition == "lora_":
+            for name, param in self.backbone.named_parameters():
+                if "classifier" not in name and "lora" not in name:
+                    param.requires_grad = False
+        return False
+    
+    def unfreeze_schedule(self, x):
+        pass
+    
+    
+    
+    
+    # ---------- From features training methods ---------- #
     
     def forward_classifier(self, features, labels, loss_fct=None):
         """

@@ -29,13 +29,6 @@ class BaseModel(nn.Module):
         
     def forward(self, x):
         raise NotImplementedError("Subclasses must implement the forward method.")
-
-    def modify_last_layer(self, new_layer_config):
-        """
-        Modify the last layer(s) of the model.
-        :param new_layer_config: A new layer or sequential block to replace the final layer(s).
-        """
-        raise NotImplementedError("Subclasses must implement modify_last_layer().")
     
     def process_input(self, frame_list = None, prompt = None, system_message = None):
         """
@@ -445,6 +438,10 @@ class BaseModel(nn.Module):
         """
         raise NotImplementedError("Subclasses must implement eval_epoch().")    
         
+        
+        
+    # ----------------- Training and Testing ---------------- #
+        
     def train_from_tokens(
         self,
         train_dataloader: DataLoader,
@@ -471,7 +468,7 @@ class BaseModel(nn.Module):
         """
         best_val_loss = float("inf")
         no_improve = 0
-        logger.debug(f"Training {self.model_name} model")
+        logger.debug(f"Training {self.model_name} model for {epochs} epochs")
         
         optimizer = self.define_optimizer(optimizer_name = optimizer_name,
                                           learning_rate = learning_rate,
@@ -494,8 +491,9 @@ class BaseModel(nn.Module):
         unfreezing = self.set_freezing_condition(freezing_condition)
         logger.debug("Freezing condition set")
                 
+        prior_probability = prior_probability.clamp_min(1e-6).clamp_max(1 - 1e-6)
         bias = -(1 - prior_probability).log() + prior_probability.log()
-        self.classifier.bias.data = bias.to(self.device)
+        self.classifier.bias.data.copy_(bias.to(self.device))
         logger.debug(f"Initial bias for the model: {bias}")
         
         epo_iter = tqdm(range(1, epochs + 1), desc="Epochs", unit="epoch") if show_progress else range(1, epochs + 1)
