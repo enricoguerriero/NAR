@@ -497,7 +497,10 @@ class BaseModel(nn.Module):
                 
         prior_probability = prior_probability.clamp_min(1e-6).clamp_max(1 - 1e-6)
         bias = -(1 - prior_probability).log() + prior_probability.log()
-        self.classifier.bias.data.copy_(bias.to(self.device))
+        try:
+            self.classifier.bias.data.copy_(bias.to(self.device))
+        except:
+            self.classifier[-1].bias.data.copy_(bias.to(self.device))
         logger.debug(f"Initial bias for the model: {bias}")
         
         epo_iter = tqdm(range(1, epochs + 1), desc="Epochs", unit="epoch") if show_progress else range(1, epochs + 1)
