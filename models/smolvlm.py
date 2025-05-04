@@ -40,7 +40,7 @@ class SmolVLM(BaseModel):
         
         self.backbone = get_peft_model(self.backbone, lora_config)
         
-        hidden_size = self.backbone.config.hidden_size
+        hidden_size = self.backbone.get_input_embeddings().embedding_dim
         self.classifier = nn.Sequential(
             nn.Linear(hidden_size, 512),
             nn.ReLU(),
