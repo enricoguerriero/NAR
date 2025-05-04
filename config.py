@@ -101,7 +101,7 @@ CONFIG = {
         """,
     "clip_length_0s": 2,  # seconds
     "overlapping_0s": 0.5,  # proportion of overlap
-    "frame_per_second_0s": 4,  # target FPS
+    "frame_per_second_0s": 8,  # target FPS
     "batch_size_feature_0s": 1, # batch size for feature extraction (low because it runs the vlm)
     
     
