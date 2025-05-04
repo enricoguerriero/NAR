@@ -49,7 +49,7 @@ class VideoLlava(BaseModel):
             nn.ReLU(),
             nn.Dropout(0.1),
             nn.Linear(512, num_classes)
-        )
+        ).to(self.device)
         
         for name, param in self.backbone.named_parameters():
             if "classifier" not in name:
