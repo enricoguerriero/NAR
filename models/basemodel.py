@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import glob
 from torch.utils.data import DataLoader
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import precision_recall_fscore_support, f1_score
 from torch import Tensor
 from torch.optim import lr_scheduler
 import wandb
@@ -313,15 +313,55 @@ class BaseModel(nn.Module):
 
         return labels
     
+    def calibrate_thresholds(self,
+                             logits: torch.Tensor,
+                             labels: torch.Tensor,
+                             num_grid: int = 101):
+        """
+        Calibrate per-class sigmoid thresholds by maximizing F1 on a held-out set.
+
+        Args:
+            logits: Tensor of shape (N, C) raw model outputs
+            labels: Tensor of shape (N, C) binary ground-truth labels
+            num_grid: Number of threshold candidates to sweep between 0 and 1
+        """
+        # move to cpu and numpy
+        probs = logits.sigmoid().detach().cpu().numpy()
+        truths = labels.cpu().numpy().astype(int)
+        N, C = truths.shape
+
+        best_thresholds = []
+        for c in range(C):
+            best_f1, best_t = -1.0, 0.5
+            for t in np.linspace(0.0, 1.0, num_grid):
+                preds_c = (probs[:, c] >= t).astype(int)
+                f1_c = f1_score(truths[:, c], preds_c, zero_division=0)
+                if f1_c > best_f1:
+                    best_f1, best_t = f1_c, t
+            best_thresholds.append(best_t)
+        # store as tensor
+        self.calibrated_thresholds = torch.tensor(best_thresholds, device=self.device)
+
+        return self.calibrated_thresholds
+    
     def metric_computation(self,
                         logits: torch.Tensor,
                         labels: torch.Tensor,
-                        threshold: float = 0.5):
+                        threshold: float | torch.Tensor | None = None):
         """
         Compute TP/FP/FN/TN and derived metrics for a multi-label task.
         """
-        # make everything boolean
-        preds = (logits.sigmoid() >= threshold)
+        if threshold is None:
+            if self.calibrated_thresholds is not None:
+                thr = self.calibrated_thresholds.to(self.device)
+            else:
+                thr = 0.5
+        else:
+            thr = threshold
+            
+        probs = logits.sigmoid()
+        thr_tensor = torch.tensor(thr, device=self.device) if not isinstance(thr, torch.Tensor) else thr.to(self.device)
+        preds = (probs >= thr_tensor)
         truths = labels.bool()
         
         # if truths.dim() == 3:
@@ -329,8 +369,16 @@ class BaseModel(nn.Module):
         #     truths = truths.cpu().numpy().reshape(n * m, C).astype(int)
         #     preds = preds.cpu().numpy().reshape(n * m, C).astype(int)
         # else:
+
         truths = truths.cpu().numpy().astype(int)
         preds = preds.cpu().numpy().astype(int)
+
+        print(truths.shape, flush=True)
+        print(preds.shape, flush=True)
+        
+        print(np.unique(truths), flush=True)
+        print(np.unique(preds), flush=True)
+
                 
         print("  - total val samples:", truths.shape[0], flush=True)
         print("  - sum of preds per class:", preds.sum(axis=0), flush=True)
