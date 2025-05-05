@@ -1,6 +1,7 @@
 import os
 import torch
 from torch.utils.data import Dataset, DataLoader
+import re
 
 class TokenDataset(Dataset):
     """
@@ -8,7 +9,10 @@ class TokenDataset(Dataset):
     """
     def __init__(self, data_dir: str):
         self.data_dir = data_dir
-        self.files = sorted(f for f in os.listdir(data_dir) if f.endswith('.pt'))
+        self.files = sorted(
+            (f for f in os.listdir(data_dir) if f.endswith('.pt')),
+            key=lambda x: int(re.search(r'clip_(\d+)_', x).group(1))
+        )
         self.n_classes = 4
         self.pos_counts = torch.zeros(self.n_classes, dtype=torch.float32)
         self._total_samples = len(self.files)
