@@ -221,6 +221,8 @@ class BaseModel(nn.Module):
             logger.info(f"Frame per clip: {frame_per_clip}")
             logger.info(f"Overlapping frames: {overlapping_frames}")
             
+            logger.info(f"Video length: {cap.get(cv2.CAP_PROP_FRAME_COUNT)} frames")
+            
             frame_index = 0
             frames_list = []
             clip_index = 0
