@@ -21,4 +21,4 @@ if __name__ == "__main__":
     # Example usage
     tensor = torch.load("data/tokens/VideoLLaVA/0-shot/2sec_4fps/video_0_clip_0_0_0_0_0.pt")["pixel_values_videos"].squeeze(0)
     output_path = "output_video.mp4"
-    tensor_to_video(tensor, output_path)
+    tensor_to_video(tensor.numpy(), output_path)
