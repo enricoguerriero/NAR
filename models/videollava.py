@@ -277,6 +277,7 @@ class VideoLlava(BaseModel):
             train_loss, logits, labels = self.train_classifier_epoch(train_dataloader, optimizer, criterion)
 
             log_msg = f"[{epoch:02d}/{epochs}] train-loss: {train_loss:.4f}"
+            print(f"logits: {logits}, labels: {labels}", flush=True)
             train_metrics = self.metric_computation(logits, labels, threshold)
             log_msg += f" | train-f1: {train_metrics['f1_macro']:.4f}"
 
@@ -284,6 +285,7 @@ class VideoLlava(BaseModel):
                 val_loss, val_logits, val_labels = self.eval_classifier_epoch(val_dataloader, criterion)
                 
                 log_msg += f" | val-loss: {val_loss:.4f}"
+                print(f"val_logits: {val_logits}, val_labels: {val_labels}", flush=True)
                 val_metrics = self.metric_computation(val_logits, val_labels, threshold)
                 log_msg += f" | val-f1: {val_metrics["f1_macro"]:.4f}"
 
