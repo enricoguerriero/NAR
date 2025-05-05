@@ -231,16 +231,25 @@ class BaseModel(nn.Module):
                     break
                 
                 if frame_index % frame_interval == 0:
+                    
+                    current_time_ms = (frame_index / fps) * 1000
+
+                    if first_frame_time is None:
+                        first_frame_time = current_time_ms
+                    
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     frames_list.append(frame)
                     
                     if len(frames_list) == frame_per_clip:
-                        label = self.label_clip((frame_index / fps) * 1000, clip_length * 1000, annotation)
+                        clip_start = first_frame_time
+                        clip_length_ms = clip_length * 1000
+                        label = self.label_clip(clip_start, clip_length_ms, annotation)
                         label_str = "_".join(str(x) for x in label)
                         tokens = self.process_input(frames_list, prompt, system_message)
                         file_name = "video_" + str(i) + "_clip_" + str(clip_index) + "_" + label_str + ".pt"
                         torch.save(tokens, os.path.join(output_folder, file_name))
                         slide = frame_per_clip - overlapping_frames
+                        first_frame_time = first_frame_time + slide * (1000 / frame_per_second)
                         frames_list = frames_list[slide:]
                         
                         clip_index += 1
