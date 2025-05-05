@@ -364,14 +364,13 @@ class BaseModel(nn.Module):
         preds = (probs >= thr_tensor)
         truths = labels.bool()
         
-        # if truths.dim() == 3:
-        #     n, m, C = truths.shape  # n=13376, m=2, C=4
-        #     truths = truths.cpu().numpy().reshape(n * m, C).astype(int)
-        #     preds = preds.cpu().numpy().reshape(n * m, C).astype(int)
-        # else:
-
-        truths = truths.cpu().numpy().astype(int)
-        preds = preds.cpu().numpy().astype(int)
+        if truths.dim() == 3:
+            n, m, C = truths.shape  # n=13376, m=2, C=4
+            truths = truths.cpu().numpy().reshape(n * m, C).astype(int)
+            preds = preds.cpu().numpy().reshape(n * m, C).astype(int)
+        else:
+            truths = truths.cpu().numpy().astype(int)
+            preds = preds.cpu().numpy().astype(int)
 
         print(truths.shape, flush=True)
         print(preds.shape, flush=True)
