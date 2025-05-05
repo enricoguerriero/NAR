@@ -224,6 +224,7 @@ class BaseModel(nn.Module):
             frame_index = 0
             frames_list = []
             clip_index = 0
+            first_frame_time = None
             
             while True:
                 ret, frame = cap.read()
