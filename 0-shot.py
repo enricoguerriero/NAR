@@ -55,7 +55,7 @@ def main():
     
     # Export tokens
     if export_tokens:
-        token_dir = os.path.join("data/tokens", model_name, "0-shot")
+        token_dir = os.path.join("data/tokens", model_name, "0-shot", "trial")
         os.makedirs(token_dir, exist_ok=True)
         logger.info(f"Exporting tokens to {token_dir}.")
         
@@ -65,13 +65,13 @@ def main():
                                 clip_length = CONFIG["clip_length_0s"],
                                 overlapping = CONFIG["overlapping_0s"],
                                 frame_per_second = CONFIG["frame_per_second_0s"],
-                                prompt = CONFIG["prompt_0s"],
-                                system_message = CONFIG["system_message_0s"],
+                                prompt = "what's happening in the video?",#CONFIG["prompt_0s"],
+                                system_message = "",#CONFIG["system_message_0s"],
                                 logger = logger)
         logger.info("Tokens exported successfully.")
     else:
         logger.info("Exporting tokens is skipped.")
-        token_dir = os.path.join("data/tokens", model_name, "0-shot", f"{CONFIG['clip_length_0s']}sec_{CONFIG['frame_per_second_0s']}fps")
+        token_dir = os.path.join("data/tokens", model_name, "0-shot", "trial", f"{CONFIG['clip_length_0s']}sec_{CONFIG['frame_per_second_0s']}fps")
     
     token_dataset = TokenDataset(token_dir)
     logger.info(f"Token dataset loaded from {token_dir}.")
