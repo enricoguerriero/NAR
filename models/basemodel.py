@@ -324,13 +324,17 @@ class BaseModel(nn.Module):
         preds = (logits.sigmoid() >= threshold)
         truths = labels.bool()
         
-        if truths.dim() == 3:
-            n, m, C = truths.shape  # n=13376, m=2, C=4
-            truths = truths.cpu().numpy().reshape(n * m, C).astype(int)
-            preds = preds.cpu().numpy().reshape(n * m, C).astype(int)
-        else:
-            truths = truths.cpu().numpy().astype(int)
-            preds = preds.cpu().numpy().astype(int)
+        # if truths.dim() == 3:
+        #     n, m, C = truths.shape  # n=13376, m=2, C=4
+        #     truths = truths.cpu().numpy().reshape(n * m, C).astype(int)
+        #     preds = preds.cpu().numpy().reshape(n * m, C).astype(int)
+        # else:
+        truths = truths.cpu().numpy().astype(int)
+        preds = preds.cpu().numpy().astype(int)
+                
+        print("  - total val samples:", truths.shape[0], flush=True)
+        print("  - sum of preds per class:", preds.sum(axis=0), flush=True)
+        print("  - sum of truths per class:", truths.sum(axis=0), flush=True)
         
         TP = ((preds == 1) & (truths == 1)).sum(axis=0)
         FP = ((preds == 1) & (truths == 0)).sum(axis=0)
