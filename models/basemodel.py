@@ -352,34 +352,38 @@ class BaseModel(nn.Module):
         Compute TP/FP/FN/TN and derived metrics for a multi-label task.
         """
         if threshold is None:
-            if self.calibrated_thresholds is not None:
-                thr = self.calibrated_thresholds
-            else:
-                thr = 0.5
+            thr = self.calibrated_thresholds if self.calibrated_thresholds is not None else 0.5
         else:
             thr = threshold
-            
-        probs = logits.sigmoid()
-        thr_tensor = torch.tensor(thr, device=self.device) if not isinstance(thr, torch.Tensor) else thr.to(self.device)
-        thr = thr_tensor.cpu().numpy()
-        preds = (probs >= thr)
-        truths = labels.bool()
+
+        probs = torch.sigmoid(logits)
+        
+        if not isinstance(thr, torch.Tensor):
+            thr = torch.tensor(thr, dtype=probs.dtype, device=probs.device)
+        else:
+            thr = thr.to(device=probs.device, dtype=probs.dtype)
+
+        if thr.ndim == 0:
+            thr = thr.expand_as(probs)
+        elif thr.shape != probs.shape:
+            thr = thr.expand(probs.shape)
+
+        preds = (probs >= thr).int()
+        truths = labels.int()
         
         if truths.dim() == 3:
-            n, m, C = truths.shape  # n=13376, m=2, C=4
-            truths = truths.cpu().numpy().reshape(n * m, C).astype(int)
-            preds = preds.cpu().numpy().reshape(n * m, C).astype(int)
-        else:
-            truths = truths.cpu().numpy().astype(int)
-            preds = preds.cpu().numpy().astype(int)
+            n, m, C = truths.shape
+            preds = preds.view(n * m, C)
+            truths = truths.view(n * m, C)
 
-        print(truths.shape, flush=True)
-        print(preds.shape, flush=True)
-        
-        print(np.unique(truths), flush=True)
-        print(np.unique(preds), flush=True)
+        preds = preds.cpu().numpy()
+        truths = truths.cpu().numpy()
 
-                
+
+        print("Truth shape:", truths.shape, flush=True)
+        print("Pred shape:", preds.shape, flush=True)
+        print("Unique truths:", np.unique(truths), flush=True)
+        print("Unique preds:", np.unique(preds), flush=True)
         print("  - total val samples:", truths.shape[0], flush=True)
         print("  - sum of preds per class:", preds.sum(axis=0), flush=True)
         print("  - sum of truths per class:", truths.sum(axis=0), flush=True)
