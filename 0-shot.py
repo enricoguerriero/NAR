@@ -65,8 +65,8 @@ def main():
                                 clip_length = CONFIG["clip_length_0s"],
                                 overlapping = CONFIG["overlapping_0s"],
                                 frame_per_second = CONFIG["frame_per_second_0s"],
-                                prompt = "what's happening in the video?",#CONFIG["prompt_0s"],
-                                system_message = "",#CONFIG["system_message_0s"],
+                                prompt = CONFIG["prompt_0s"],
+                                system_message = CONFIG["system_message_0s"],
                                 logger = logger)
         logger.info("Tokens exported successfully.")
     else:
@@ -134,7 +134,6 @@ def main():
         pixel_values_videos = clip.get("pixel_values_videos", None)
         input_ids = clip.get("input_ids", None)
         attention_mask = clip.get("attention_mask", None)
-        logger.info(f"Clip {i}: pixel_values: {pixel_values}, pixel_values_videos: {pixel_values_videos}, input_ids: {input_ids}, attention_mask: {attention_mask}")
         
         logger.info("Generating answer for clip.")
         answer = model.generate_answer(inputs = clip,
