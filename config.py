@@ -64,7 +64,7 @@ CONFIG = {
     "freezing_condition": "lora",
     
     # 0 shot specific
-    "prompt_0s": "Is the baby / mannequin visible? If yes, is the baby receiving ventilation? Is the baby being stimulated? Is the baby receiving suction?",
+    "prompt_0s": "Describe the scene. Be explicit about the presence of the mannequin and the treatments being performed, if any. Check for ventilation, stimulation, and suction.",
     "system_message_0s": """
         You are assisting in a medical simulation analysis. A camera is positioned above a table. The simulation involves a mannequin representing a newborn baby, which may or may not be present on the table.
 
