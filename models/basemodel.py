@@ -353,7 +353,7 @@ class BaseModel(nn.Module):
         """
         if threshold is None:
             if self.calibrated_thresholds is not None:
-                thr = self.calibrated_thresholds.to(self.device)
+                thr = self.calibrated_thresholds
             else:
                 thr = 0.5
         else:
@@ -361,7 +361,8 @@ class BaseModel(nn.Module):
             
         probs = logits.sigmoid()
         thr_tensor = torch.tensor(thr, device=self.device) if not isinstance(thr, torch.Tensor) else thr.to(self.device)
-        preds = (probs >= thr_tensor)
+        thr = thr_tensor.cpu().numpy()
+        preds = (probs >= thr)
         truths = labels.bool()
         
         if truths.dim() == 3:
