@@ -8,16 +8,23 @@ def tensor_to_images(tensor, output_folder):
 
     for i, frame in enumerate(tensor):
         frame = frame.numpy() if isinstance(frame, torch.Tensor) else frame
+
+        # Convert from (C, H, W) to (H, W, C)
+        if frame.shape[0] in [1, 3]:
+            frame = np.transpose(frame, (1, 2, 0))
+        else:
+            raise ValueError(f"Unexpected channel size in frame shape: {frame.shape}")
+
+        # Normalize and convert to uint8
         frame = np.clip(frame * 255, 0, 255).astype(np.uint8)
 
-        if frame.shape[-1] == 3:  # RGB
+        # Convert RGB to BGR for OpenCV
+        if frame.shape[2] == 3:
             frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        elif len(frame.shape) == 2:  # Already grayscale
-            frame_bgr = frame
-        elif frame.shape[-1] == 1:  # Grayscale with channel dim
-            frame_bgr = frame.squeeze(-1)
+        elif frame.shape[2] == 1:
+            frame_bgr = frame.squeeze(2)
         else:
-            raise ValueError(f"Unsupported frame shape: {frame.shape}")
+            raise ValueError(f"Unsupported channel count: {frame.shape[2]}")
 
         filename = os.path.join(output_folder, f"frame_{i:04d}.png")
         cv2.imwrite(filename, frame_bgr)
