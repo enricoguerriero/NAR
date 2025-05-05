@@ -69,6 +69,7 @@ def main():
                                 system_message = CONFIG["system_message_0s"],
                                 logger = logger)
         logger.info("Tokens exported successfully.")
+        token_dir = os.path.join(token_dir, f'{CONFIG["clip_length_0s"]}sec_{CONFIG["frame_per_second_0s"]}fps')
     else:
         logger.info("Exporting tokens is skipped.")
         token_dir = os.path.join("data/tokens", model_name, "0-shot", "trial", f"{CONFIG['clip_length_0s']}sec_{CONFIG['frame_per_second_0s']}fps")
