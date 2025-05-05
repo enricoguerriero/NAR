@@ -33,6 +33,6 @@ def tensor_to_images(tensor, output_folder):
 
 
 if __name__ == "__main__":
-    tensor = torch.load("data/tokens/VideoLLaVA/0-shot/2sec_4fps/video_1_clip_2332_1_0_1_0.pt")["pixel_values_videos"].squeeze(0)
+    tensor = torch.load("data/tokens/VideoLLaVA/0-shot/2sec_4fps/video_1_clip_3274_1_0_1_0.pt")["pixel_values_videos"].squeeze(0)
     output_folder = "output_frames"
     tensor_to_images(tensor, output_folder)
