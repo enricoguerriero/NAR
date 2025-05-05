@@ -59,7 +59,7 @@ def main():
         os.makedirs(token_dir, exist_ok=True)
         logger.info(f"Exporting tokens to {token_dir}.")
         
-        model.export_tokens(video_folder = os.path.join(CONFIG["video_folder"], "test"),
+        model.export_tokens(video_folder = os.path.join(CONFIG["video_folder"], "demo"),
                                 annotation_folder = os.path.join(CONFIG["annotation_folder"], "test"),
                                 output_folder = token_dir,
                                 clip_length = CONFIG["clip_length_0s"],
