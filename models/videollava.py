@@ -68,7 +68,7 @@ class VideoLlava(BaseModel):
         )
 
         last_layer = outputs.hidden_states[-1]  # Use CLS or first token
-        pooled = last_layer[:, 0, :]  # CLS token representation
+        pooled = last_layer[:, -1, :]  # CLS token representation
         logits = self.classifier(pooled.float())
         
         
@@ -185,8 +185,8 @@ class VideoLlava(BaseModel):
             output_hidden_states=True,
         )
 
-        last_layer = outputs.hidden_states[-1]
-        pooled = last_layer[:, 0, :]  # CLS token representation
+        last_layer = outputs.hidden_states[-1] # (batch, seq_len, hidden_dim)
+        pooled = last_layer[:, -1, :]  # CLS token representation
         return pooled.float()
  
     def train_classifier_epoch(self, dataloader, optimizer, loss_fct, max_grad_norm=1.0):
