@@ -54,6 +54,7 @@ class VideoLlava(BaseModel):
         for name, param in self.backbone.named_parameters():
             if "classifier" not in name:
                 param.requires_grad = False
+
         
         self.pos_weights = None
 
@@ -68,7 +69,7 @@ class VideoLlava(BaseModel):
         )
 
         last_layer = outputs.hidden_states[-1]  # Use CLS or first token
-        pooled = last_layer[:, -1, :]  # CLS token representation
+        pooled = last_layer.mean(dim=1)  # CLS token representation
         logits = self.classifier(pooled.float())
         
         
@@ -186,7 +187,7 @@ class VideoLlava(BaseModel):
         )
 
         last_layer = outputs.hidden_states[-1] # (batch, seq_len, hidden_dim)
-        pooled = last_layer[:, -1, :]  # CLS token representation
+        pooled = last_layer.mean(dim=1)  # CLS token representation
         return pooled.float()
  
     def train_classifier_epoch(self, dataloader, optimizer, loss_fct, max_grad_norm=1.0):
@@ -204,9 +205,9 @@ class VideoLlava(BaseModel):
             optimizer.zero_grad()
             inputs = {k: v.to(self.device) for k, v in batch.items()}
             labels = inputs.pop("labels")
-            print(f"labels: {labels}", flush=True)
-            print(f"inputs: {inputs}", flush=True)
-            print(f"pixel values_videos: {inputs['features']}", flush=True)
+            # print(f"labels: {labels}", flush=True)
+            # print(f"inputs: {inputs}", flush=True)
+            # print(f"pixel values_videos: {inputs['features']}", flush=True)
             with autocast(device_type='cuda'):
                 outputs = self.forward_classifier(**inputs, labels = labels, loss_fct=loss_fct)
             loss = outputs["loss"]
