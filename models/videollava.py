@@ -175,9 +175,9 @@ class VideoLlava(BaseModel):
         """
         Extract features from the model.
         """
-        print(f"pixel_values_videos: {pixel_values_videos}", flush=True)
-        print(f"input_ids: {input_ids}", flush=True)
-        print(f"attention_mask: {attention_mask}", flush=True)
+        # print(f"pixel_values_videos: {pixel_values_videos}", flush=True)
+        # print(f"input_ids: {input_ids}", flush=True)
+        # print(f"attention_mask: {attention_mask}", flush=True)
         outputs = self.backbone(
             pixel_values_videos=pixel_values_videos,
             input_ids=input_ids,
