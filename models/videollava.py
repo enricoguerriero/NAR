@@ -203,7 +203,7 @@ class VideoLlava(BaseModel):
             labels = inputs.pop("labels")
             print(f"labels: {labels}", flush=True)
             print(f"inputs: {inputs}", flush=True)
-            print(f"pixel values_videos: {inputs['pixel_values_videos']}", flush=True)
+            print(f"pixel values_videos: {inputs['features']}", flush=True)
             with autocast(device_type='cuda'):
                 outputs = self.forward_classifier(**inputs, labels = labels, loss_fct=loss_fct)
             loss = outputs["loss"]
