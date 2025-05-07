@@ -212,8 +212,8 @@ class VideoLlava(BaseModel):
                 outputs = self.forward_classifier(**inputs, labels = labels, loss_fct=loss_fct)
             loss = outputs["loss"]
             logits = outputs["logits"]
-            print(f"loss: {loss}", flush=True)
-            print(f"logits: {logits}", flush=True)
+            # print(f"loss: {loss}", flush=True)
+            # print(f"logits: {logits}", flush=True)
             labels_list.append(labels.cpu())
             logits_list.append(logits.cpu())
             
