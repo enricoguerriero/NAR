@@ -10,6 +10,7 @@ from torch.optim import Optimizer, lr_scheduler
 from torch.amp import autocast, GradScaler
 from torch.nn.utils import clip_grad_norm_
 from peft import LoraConfig, get_peft_model, TaskType
+import copy
 
 class VideoLlava(BaseModel):
     def __init__(self, checkpoint_path: str = None, base_model_id: str = "LanguageBind/Video-LLaVA-7B-hf", device=None, num_classes=4):
@@ -318,12 +319,16 @@ class VideoLlava(BaseModel):
             
             if val_dataloader is not None and val_loss < best_val_loss:
                 best_val_loss = val_loss
+                best_model_wts = copy.deepcopy(self.classifier.state_dict())
                 no_improve = 0
             else:
                 no_improve += 1
                 if no_improve >= patience:
                     print(f"Early stopping at epoch {epoch} with patience {patience}.")
                     break
+
+        self.classifier.load_state_dict(best_model_wts)
+        self.save_model()
 
         results = {"train_loss": train_loss,
                    "train_metrics": train_metrics,

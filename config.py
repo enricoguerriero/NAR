@@ -12,7 +12,7 @@ CONFIG = {
     "batch_size_feature": 1, # batch size for feature extraction (low because it runs the vlm)
     
     # VLM specific
-    "prompt": "Is the baby / mannequin visible? If yes, is the baby receiving ventilation? Is the baby being stimulated? Is the baby receiving suction?",
+    "prompt": "Is the baby / mannequin visible? If yes, is the baby receiving ventilation? Is the baby being stimulated? Is the baby receiving suction? Ventilation and suction can not be performed at the same time.",
     "system_message": """
         You are assisting in a medical simulation analysis. A camera is positioned above a table. The simulation involves a mannequin representing a newborn baby, which may or may not be present on the table.
 
