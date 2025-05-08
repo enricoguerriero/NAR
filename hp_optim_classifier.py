@@ -130,7 +130,7 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
     logger.info("Starting Optuna study with persistence.")
     
-    DB_PATH = f"sqlite:///{model_name}/optuna_newborn.db"  # Path to persistent storage
+    DB_PATH = f"sqlite:///hp_opt/{model_name}/optuna_newborn.db"  # Path to persistent storage
     STUDY_NAME = "newborn_activity_recognition"
     
     folder = "2sec_4fps"
