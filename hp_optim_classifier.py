@@ -17,6 +17,8 @@ from optuna.visualization import (
 import wandb
 from argparse import ArgumentParser
 import os
+import torch.multiprocessing as mp
+mp.set_sharing_strategy('file_system')
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 PROJECT_NAME = "NewbornActivityRecognition"
