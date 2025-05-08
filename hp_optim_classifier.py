@@ -54,7 +54,7 @@ def objective(trial: optuna.Trial) -> float:
     model = load_model(model_name = model_name, checkpoint = None)
     # Rebuild classifier with sampled architecture
     num_classes = model.classifier[-1].out_features
-    backbone_hidden = model.backbone.config.hidden_size
+    backbone_hidden = model.backbone.config.text_config.hidden_size
     model.classifier = nn.Sequential(
         nn.Linear(backbone_hidden, hidden_dim),
         nn.ReLU(),
