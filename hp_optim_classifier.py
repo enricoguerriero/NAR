@@ -133,7 +133,7 @@ if __name__ == '__main__':
     
     DB_PATH = f"sqlite:///hp_opt/{model_name}/optuna_newborn.db"  # Path to persistent storage
     STUDY_NAME = "newborn_activity_recognition"
-    os.makedirs(os.path.dirname(f"/hp_opt/{model_name}/optuna_newborn.db"), exist_ok=True)
+    os.makedirs(os.path.dirname(f"hp_opt/{model_name}/optuna_newborn.db"), exist_ok=True)
     
     folder = "2sec_4fps"
     train_dataset = FeatureDataset(f'data/features/{model_name}/train/{folder}')
