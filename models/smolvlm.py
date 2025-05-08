@@ -40,7 +40,7 @@ class SmolVLM(BaseModel):
         
         self.backbone = get_peft_model(self.backbone, lora_config)
         
-        hidden_size = self.backbone.get_input_embeddings().embedding_dim
+        hidden_size = self.backbone.config.hidden_size
         self.classifier = nn.Sequential(
             nn.Linear(hidden_size, 512),
             nn.ReLU(),
@@ -114,7 +114,7 @@ class SmolVLM(BaseModel):
         ).to(self.device)
         
     
-    def set_cleaning_condition(self, mode: str):
+    def set_freezing_condition(self, mode: str):
         """
         Sets the cleaning condition for the model.
         """
@@ -139,16 +139,16 @@ class SmolVLM(BaseModel):
         else:
             raise ValueError(f"Unknown mode: {mode}. Use 'none', 'all', or 'lora'.")
         
-        def unfreeze_schedule(self, x):
-            pass
-        
-        def collate_fn_tokens(self, batch):
-            """
-            Collate function for the model.
-            """
-            return {
-                "pixel_values": torch.cat([item["pixel_values"] for item in batch], dim=0),
-                "input_ids": torch.cat([item["input_ids"] for item in batch], dim=0),
-                "attention_mask": torch.cat([item["attention_mask"] for item in batch], dim=0),
-                "labels": torch.stack([item["labels"] for item in batch], dim=0),
-            }
+    def unfreeze_schedule(self, x):
+        pass
+    
+    def collate_fn_tokens(self, batch):
+        """
+        Collate function for the model.
+        """
+        return {
+            "pixel_values": torch.cat([item["pixel_values"] for item in batch], dim=0),
+            "input_ids": torch.cat([item["input_ids"] for item in batch], dim=0),
+            "attention_mask": torch.cat([item["attention_mask"] for item in batch], dim=0),
+            "labels": torch.stack([item["labels"] for item in batch], dim=0),
+        }
