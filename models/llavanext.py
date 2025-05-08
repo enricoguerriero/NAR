@@ -7,7 +7,7 @@ from peft import LoraConfig, get_peft_model, TaskType
 class LlavaNext(BaseModel):
     
     def __init__(self, 
-                 checkpoint_path: str = None, 
+                 checkpoint: str = None, 
                  base_model_id: str = "llava-hf/LLaVA-NeXT-Video-7B-hf", 
                  device=None, 
                  num_classes=4,
@@ -17,9 +17,9 @@ class LlavaNext(BaseModel):
         self.model_name = "LLavaNext"
         self.device = torch.device(device) if device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        if checkpoint_path:
+        if checkpoint:
             self.backbone = LlavaNextVideoForConditionalGeneration.from_pretrained(
-                checkpoint_path,
+                checkpoint,
                 torch_dtype=torch.float16
             ).to(self.device)
         else:
