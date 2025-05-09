@@ -3,11 +3,7 @@ import torch
 from transformers import AutoImageProcessor, TimesformerForVideoClassification, TimesformerConfig
 from torch.amp import GradScaler, autocast
 import torch.nn as nn
-from torch.utils.data import DataLoader
-import numpy as np
 from tqdm import tqdm
-import os
-from torch.optim import Optimizer, lr_scheduler
 from torch.nn.utils import clip_grad_norm_
 
 class TimeSformer(BaseModel):
