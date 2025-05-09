@@ -48,7 +48,7 @@ def estimate_remaining_time(study_name, db_path):
 
 # Example usage:
 if __name__ == "__main__":
-    DB_PATH = "sqlite:///optuna_newborn.db"  # Adjust path if needed
+    DB_PATH = "sqlite:///hp_opt/VideoLLaVA/optuna_newborn.db"  # Adjust path if needed
     STUDY_NAME = "newborn_activity_recognition"
     
     estimate_remaining_time(STUDY_NAME, DB_PATH)
