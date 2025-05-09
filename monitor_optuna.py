@@ -6,7 +6,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Optuna study configuration
-DB_PATH = "sqlite:///optuna_newborn.db"  
+DB_PATH = "sqlite:///hp_opt/VideoLLaVA/optuna_newborn.db"  
 STUDY_NAME = "newborn_activity_recognition"
 
 def main():
