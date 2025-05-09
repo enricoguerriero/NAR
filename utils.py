@@ -32,6 +32,9 @@ def load_model(model_name: str, checkpoint: str):
     elif model_name == "LLavaNext":
         from models.llavanext import LlavaNext
         model = LlavaNext(checkpoint=checkpoint)
+    elif model_name == "LLavaNext34":
+        from models.llavanext34 import LlavaNext34
+        model = LlavaNext34(checkpoint=checkpoint)
     else:
         from models.basemodel import BaseModel
         model = BaseModel(checkpoint=checkpoint)
