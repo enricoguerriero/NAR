@@ -12,7 +12,7 @@ class LlavaNext34(LlavaNext):
     """
     def __init__(self, 
                  checkpoint: str = None, 
-                 base_model_id: str = "lmms-lab/LLaVA-NeXT-Video-34B", 
+                 base_model_id: str = "llava-hf/LLaVA-NeXT-Video-34B-hf", 
                  device=None, 
                  num_classes=4,
                  lora_modality = "language"):
