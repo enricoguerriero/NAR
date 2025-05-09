@@ -27,6 +27,7 @@ class LlavaNext(BaseModel):
                 base_model_id,
                 torch_dtype=torch.float16
             ).to(self.device)
+        self.processor = AutoProcessor.from_pretrained(base_model_id)
         
         lora_config = LoraConfig(
             r=16,
