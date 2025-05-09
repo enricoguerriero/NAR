@@ -26,6 +26,9 @@ def load_model(model_name: str, checkpoint: str):
     elif model_name == "SmolVLM":
         from models.smolvlm import SmolVLM
         model = SmolVLM(checkpoint=checkpoint)
+    elif model_name == "SmolVLM256":
+        from models.smolvlm256 import SmolVLM256
+        model = SmolVLM256(checkpoint=checkpoint)
     elif model_name == "TimeSformer":
         from models.timesformer import TimeSformer
         model = TimeSformer()
