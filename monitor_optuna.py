@@ -1,15 +1,24 @@
 import optuna
 import logging
+from argparse import ArgumentParser
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Optuna study configuration
-DB_PATH = "sqlite:///hp_opt/VideoLLaVA/optuna_newborn.db"  
-STUDY_NAME = "newborn_activity_recognition"
-
 def main():
+    
+    parser = ArgumentParser(description="Monitor Optuna Study")
+    parser.add_argument("--model_name", type=str, required=True, help="Name of the model to monitor.")
+    args = parser.parse_args()
+    model_name = args.model_name
+    logger.info(f"Monitoring Optuna study for model: {model_name}")
+    
+    
+    DB_PATH = f"sqlite:///hp_opt/{model_name}/optuna_newborn.db"  
+    STUDY_NAME = "newborn_activity_recognition"
+    
     # Load the study
     study = optuna.load_study(study_name=STUDY_NAME, storage=DB_PATH)
 
