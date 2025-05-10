@@ -166,7 +166,7 @@ class LlavaNext(BaseModel):
             batch[key] = batch[key].squeeze(0).to(self.device)
         return batch
     
-    def feature_extraction(self, pixel_values=None, input_ids=None, attention_mask=None):
+    def feature_extraction(self, pixel_values_videos=None, input_ids=None, attention_mask=None):
         """
         Extract features from the model.
         """
@@ -174,7 +174,7 @@ class LlavaNext(BaseModel):
         # print(f"input_ids: {input_ids}", flush=True)
         # print(f"attention_mask: {attention_mask}", flush=True)
         outputs = self.backbone(
-            pixel_values=pixel_values,
+            pixel_values_videos=pixel_values_videos,
             input_ids=input_ids,
             attention_mask=attention_mask,
             return_dict=True,
