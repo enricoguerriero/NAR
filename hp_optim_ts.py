@@ -142,7 +142,7 @@ if __name__ == '__main__':
     )
 
     # Optimize (will resume missing trials automatically)
-    study.optimize(objective, n_trials=None, n_jobs=1, callbacks=[wandb_callback])
+    study.optimize(objective, n_trials=100, n_jobs=1, callbacks=[wandb_callback])
 
     # Log best trial
     best = study.best_trial
