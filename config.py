@@ -50,18 +50,18 @@ CONFIG = {
         
     # training specific
     "batch_size": 8,
-    "optimizer": "adam",
-    "learning_rate": 0.000023,
+    "optimizer": "adamw",
+    "learning_rate": 0.00005,
     "momentum": 0.9,
-    "weight_decay": 0.000013,
+    "weight_decay": 0.0001,
     "criterion": "wbce",
-    "scheduler": "steplr",
+    "scheduler": "reduceonplateau",
     "scheduler_patience": 5,
-    "patience": 7,
+    "patience": 5,
     "epochs": 20,
-    "threshold": 0.326,
+    "threshold": 0.5,
     "num_workers": 0,
-    "freezing_condition": "partial",
+    "freezing_condition": "none",
     
     # 0 shot specific
     "prompt_0s": "Describe the scene. Be explicit about the presence of the mannequin and the treatments being performed, if any. Check for ventilation, stimulation, and suction.",
