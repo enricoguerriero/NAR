@@ -1,5 +1,6 @@
 import optuna
 import logging
+import os
 from argparse import ArgumentParser
 from optuna.visualization import (
     plot_optimization_history,
@@ -8,8 +9,6 @@ from optuna.visualization import (
     plot_slice,
     plot_contour
 )
-import matplotlib.pyplot as plt
-import os
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -69,8 +68,9 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
     
     for name, fig in figs.items():
-        fig_path = f"{output_dir}/{name}.png"
-        fig.savefig(fig_path)
+        fig_path = os.path.join(output_dir, f"{name}.png")
+        # Save Plotly figure
+        fig.write_image(fig_path)
         logger.info(f"Saved {name} plot at: {fig_path}")
 
     logger.info("All plots saved successfully.")
