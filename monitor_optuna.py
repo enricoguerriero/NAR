@@ -1,6 +1,15 @@
 import optuna
 import logging
 from argparse import ArgumentParser
+from optuna.visualization import (
+    plot_optimization_history,
+    plot_param_importances,
+    plot_parallel_coordinate,
+    plot_slice,
+    plot_contour
+)
+import matplotlib.pyplot as plt
+import os
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -14,7 +23,6 @@ def main():
     args = parser.parse_args()
     model_name = args.model_name
     logger.info(f"Monitoring Optuna study for model: {model_name}")
-    
     
     DB_PATH = f"sqlite:///hp_opt/{model_name}/optuna_newborn.db"  
     STUDY_NAME = "newborn_activity_recognition"
@@ -47,6 +55,25 @@ def main():
     logger.info(f"  Trial #{best_trial.number} - F1 Score: {best_trial.value:.4f}")
     for key, val in best_trial.params.items():
         logger.info(f"  {key}: {val}")
+
+    # Generate and save plots
+    figs = {
+        'optimization_history': plot_optimization_history(study),
+        'param_importances': plot_param_importances(study),
+        'parallel_coordinate': plot_parallel_coordinate(study),
+        'slice_plot': plot_slice(study),
+        'contour_plot': plot_contour(study, params=['learning_rate', 'weight_decay'])
+    }
+
+    output_dir = f"plots/{model_name}/"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    for name, fig in figs.items():
+        fig_path = f"{output_dir}/{name}.png"
+        fig.savefig(fig_path)
+        logger.info(f"Saved {name} plot at: {fig_path}")
+
+    logger.info("All plots saved successfully.")
 
 if __name__ == "__main__":
     main()
