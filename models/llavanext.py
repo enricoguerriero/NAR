@@ -56,14 +56,14 @@ class LlavaNext(BaseModel):
             
     
     def forward(self, 
-                pixel_values = None, 
+                pixel_values_videos = None, 
                 input_ids = None, 
                 attention_mask = None, 
                 labels = None,
                 loss_fct = None):
         
         outputs = self.backbone(
-            pixel_values=pixel_values,
+            pixel_values_videos=pixel_values_videos,
             input_ids=input_ids,
             attention_mask=attention_mask,
             return_dict=True,
@@ -135,11 +135,11 @@ class LlavaNext(BaseModel):
         pass
     
     def collate_fn_tokens(self, batch):
-        pixel_values = torch.cat([item["pixel_values"] for item in batch], dim=0)
+        pixel_values_videos = torch.cat([item["pixel_values_videos"] for item in batch], dim=0)
         input_ids = torch.cat([item["input_ids"] for item in batch], dim=0)
         attention_mask = torch.cat([item["attention_mask"] for item in batch], dim=0)
         labels = torch.stack([item["labels"] for item in batch], dim=0)
-        return {"pixel_values": pixel_values,
+        return {"pixel_values_videos": pixel_values_videos,
                 "input_ids": input_ids,
                 "attention_mask": attention_mask,
                 "labels": labels}
