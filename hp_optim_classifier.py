@@ -142,7 +142,7 @@ if __name__ == '__main__':
     STUDY_NAME = "newborn_activity_recognition"
     os.makedirs(os.path.dirname(f"hp_opt/{model_name}/optuna_newborn.db"), exist_ok=True)
     
-    folder = "2sec_4fps"
+    folder = "2sec_8fps"
     train_dataset = FeatureDataset(f'data/features/{model_name}/train/{folder}')
     val_dataset = FeatureDataset(f'data/features/{model_name}/validation/{folder}')
     train_dataloader = DataLoader(train_dataset, batch_size=8, shuffle=True,
