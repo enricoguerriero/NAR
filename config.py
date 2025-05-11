@@ -49,7 +49,7 @@ CONFIG = {
         """,
         
     # training specific
-    "batch_size": 8,
+    "batch_size": 4,
     "optimizer": "adamw",
     "learning_rate": 0.00005,
     "momentum": 0.9,
