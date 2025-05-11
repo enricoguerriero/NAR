@@ -50,8 +50,8 @@ CONFIG = {
         
     # training specific
     "batch_size": 4,
-    "optimizer": "adamw",
-    "learning_rate": 0.00005,
+    "optimizer": "sgd",
+    "learning_rate": 0.0001,
     "momentum": 0.9,
     "weight_decay": 0.0001,
     "criterion": "wbce",
