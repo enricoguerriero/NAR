@@ -56,6 +56,8 @@ def objective(trial: optuna.Trial) -> float:
     )
     if scheduler_name == 'steplr':
         scheduler_patience = trial.suggest_int('scheduler_patience', 1, 5)
+    else:
+        scheduler_patience = None
     
 
     # Initialize model
