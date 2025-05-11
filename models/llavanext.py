@@ -75,7 +75,7 @@ class LlavaNext(BaseModel):
         logits = self.classifier(pooled)
         
         if labels is not None and loss_fct is not None:
-            loss = loss_fct(logits, labels)
+            loss = loss_fct(logits.float(), labels.float())
             return {"loss": loss, "logits": logits}
         else:
             return {"loss": None, "logits": logits}
