@@ -61,7 +61,7 @@ CONFIG = {
     "epochs": 20,
     "threshold": 0.5,
     "num_workers": 0,
-    "freezing_condition": "none",
+    "freezing_condition": "lora",
     
     # 0 shot specific
     "prompt_0s": "Describe the scene. Be explicit about the presence of the mannequin and the treatments being performed, if any. Check for ventilation, stimulation, and suction.",
