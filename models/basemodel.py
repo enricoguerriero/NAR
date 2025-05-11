@@ -582,7 +582,7 @@ class BaseModel(nn.Module):
         weight_decay: float = 1e-4,
         criterion_name: str = None,
         pos_weight: torch.Tensor = None,
-        threshold: float = 0.5,
+        threshold: float | torch.Tensor = 0.5,
         scheduler_name: str = None,
         scheduler_patience: int = 3,
         patience: int = 3,
@@ -716,7 +716,7 @@ class BaseModel(nn.Module):
                    test_dataloader: DataLoader,
                    criterion_name: str = None,
                    pos_weight: torch.Tensor = None,
-                   threshold: float = 0.5,
+                   threshold: float | torch.Tensor = 0.5,
                    wandb_run=None):
         """
         Test the model.
@@ -817,7 +817,7 @@ class BaseModel(nn.Module):
         epochs: int = 5,
         optimizer: Optimizer = None,
         criterion: nn.Module = None,
-        threshold: float = 0.5,
+        threshold: float | torch.Tensor = 0.5,
         scheduler: lr_scheduler = None,
         patience: int = 3,
         show_progress: bool = True,
@@ -888,7 +888,7 @@ class BaseModel(nn.Module):
     def test_classifier(
         self,
         test_dataloader: DataLoader,
-        threshold: float = 0.5,
+        threshold: float | torch.Tensor = 0.5,
         wandb_run=None
     ):
         self.classifier.to(self.device)

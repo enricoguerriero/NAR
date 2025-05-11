@@ -38,9 +38,14 @@ def objective(trial: optuna.Trial) -> float:
     weight_decay = trial.suggest_loguniform('weight_decay', 1e-6, 1e-2)
     optimizer_name = trial.suggest_categorical('optimizer', ['adamw', 'sgd', 'adam'])
     dropout_rate = trial.suggest_uniform('dropout', 0.0, 0.5)
-    threshold = trial.suggest_float('threshold', 0.3, 0.7)
+    threshold = torch.tensor([
+        trial.suggest_float('threshold_1', 0.3, 0.7),
+        trial.suggest_float('threshold_2', 0.3, 0.7),
+        trial.suggest_float('threshold_3', 0.3, 0.7),
+        trial.suggest_float('threshold_4', 0.3, 0.7)
+    ])
     hidden_dim = trial.suggest_categorical('hidden_dim', [256, 512, 1024])
-    if optimizer_name in ('sgd', 'adamw'):
+    if optimizer_name == 'sgd':
         momentum = trial.suggest_uniform('momentum', 0.0, 0.99)
     else:
         momentum = None
@@ -49,7 +54,8 @@ def objective(trial: optuna.Trial) -> float:
     scheduler_name = trial.suggest_categorical(
         'scheduler_name', ['steplr', 'cosineannealinglr', 'reduceonplateau']
     )
-    scheduler_patience = trial.suggest_int('scheduler_patience', 1, 5)
+    if scheduler_name == 'steplr':
+        scheduler_patience = trial.suggest_int('scheduler_patience', 1, 5)
     
 
     # Initialize model
@@ -63,9 +69,6 @@ def objective(trial: optuna.Trial) -> float:
         nn.Dropout(dropout_rate),
         nn.Linear(hidden_dim, num_classes)
     ).to(DEVICE)
-
-    # Freeze backbone, train only classifier
-    model.set_freezing_condition('all')
 
     # Define criterion and optimizer
     criterion = model.define_criterion('bce')
