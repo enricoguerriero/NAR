@@ -76,25 +76,16 @@ class VideoLlavaTimeSformer(BaseModel):
     # ------------------------------------------------------------------ #
     #                               forward                              #
     # ------------------------------------------------------------------ #
-    def forward(self, videos, text_prompts):
+    def forward(self, pixel_values_videos, input_ids, attention_mask):
         """
-        videos        : Tensor (B, T, C, H, W) *or* list of PIL frames
-        text_prompts  : list[str] length B
         returns logits: (B, num_classes)
         """
-        # 1) Pre-process both modalities
-        vid_inputs = self.processor(
-            videos=videos, return_tensors="pt", padding=True
-        ).to(self.device)
-        txt_inputs = self.processor(
-            text=text_prompts, return_tensors="pt", padding=True
-        )
-        vid_inputs.update(
-            {
-                "input_ids": txt_inputs.input_ids.to(self.device),
-                "attention_mask": txt_inputs.attention_mask.to(self.device),
-            }
-        )
+
+        vid_inputs = {
+            "pixel_values_videos": pixel_values_videos.to(self.device),
+            "input_ids": input_ids.to(self.device),
+            "attention_mask": attention_mask.to(self.device),
+        }
 
         # 2) Forward pass; grab last hidden states
         out = self.backbone(

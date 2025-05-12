@@ -27,7 +27,6 @@ THRESHOLD = 0.5          # ↑ probability cut-off for a tag to be “on”
 # 2.  Load input
 # ------------------------------------------------------------------
 input = torch.load(VIDEO_PATH)
-input["pixel_values"] = input["pixel_values_videos"].to(DEVICE)
 
 
 # ------------------------------------------------------------------
