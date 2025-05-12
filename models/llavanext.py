@@ -72,6 +72,7 @@ class LlavaNext(BaseModel):
         
         last_layer = outputs.hidden_states[-1]
         pooled = last_layer.mean(dim=1)
+        pooled = pooled.to(dtype=self.classifier[0].weight.dtype)
         logits = self.classifier(pooled)
         
         if labels is not None and loss_fct is not None:
