@@ -37,7 +37,7 @@ wandb_run = setup_wandb(
 # ──────────────────────────────────────────────────────────────────────────────
 from data.token_dataset import TokenDataset
 train_ds = TokenDataset(os.path.join(CFG.root, "train", "2sec_4fps"))
-val_ds   = TokenDataset(os.path.join(CFG.root, "val",   "2sec_4fps"))
+val_ds   = TokenDataset(os.path.join(CFG.root, "validation",   "2sec_4fps"))
 
 # ──────────────────────────────────────────────────────────────────────────────
 #  2.  Build model
