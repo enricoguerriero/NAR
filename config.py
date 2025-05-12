@@ -117,8 +117,8 @@ CONFIG = {
     "TimeSformer_frame_per_second": 4,
     
     # VideoLLaVA specific
-    "VideoLLaVA_frames_per_second": 4,
+    "VideoLLaVA_frame_per_second": 4,
     
     # LLavaNext specific
-    "LLavaNext_frames_per_second": 8,
+    "LLavaNext_frame_per_second": 8,
 }
