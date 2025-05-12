@@ -58,7 +58,7 @@ class VideoLlava(BaseModel):
             output_hidden_states=True,
         )
 
-        last_layer = outputs.hidden_states[-1]  # Use CLS or first token
+        last_layer = outputs.hidden_states[-1]  
         pooled = last_layer.mean(dim=1)  
         logits = self.classifier(pooled.float())
         

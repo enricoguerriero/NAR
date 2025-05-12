@@ -17,7 +17,7 @@ NUM_CLASSES        = 4                      # number of possible tags
 DEVICE             = "cuda" if torch.cuda.is_available() else "cpu"
 
 BASE_VIDEOLLAVA_ID = "LanguageBind/Video-LLaVA-7B-hf"
-TIMESFORMER_CKPT   = "facebook/timesformer-base-finetuned-kinetics-400"
+TIMESFORMER_CKPT   = "facebook/timesformer-base-finetuned-ssv2"
 
 LABELS = ["Baby visible", "Ventilation", "Stimulation", "Suction"]
 THRESHOLD = 0.5          # ↑ probability cut-off for a tag to be “on”
