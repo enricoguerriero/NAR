@@ -497,6 +497,38 @@ class BaseModel(nn.Module):
         if test_loss is not None:
             final_log["test/loss"] = test_loss
         wandb_run.log(final_log)
+    
+    def filter_new_params(self, new_params, optimizer):
+        """
+        Filter out parameters that are already in the optimizer.
+        """
+        existing_params = {id(p) for group in optimizer.param_groups for p in group['params']}
+        return [p for p in new_params if id(p) not in existing_params]
+    
+    def manage_unfreezing(self, epoch, epochs, optimizer, scheduler, logger):
+        """
+        Manage the unfreezing schedule and parameter addition.
+        """
+        new_params = self.unfreeze_schedule(epoch, epochs)
+        if new_params:
+            logger.debug(f"Unfreezing condition met at epoch {epoch}")
+
+            # Filter new parameters to avoid duplicates
+            new_params = self.filter_new_params(new_params, optimizer)
+
+            # Only add new parameters if they are not already present
+            if new_params:
+                logger.debug(f"Adding {len(new_params)} new parameters to optimizer")
+                optimizer.add_param_group({"params": new_params})
+
+                # Update the scheduler's optimizer reference, if applicable
+                if scheduler is not None and hasattr(scheduler, 'optimizer'):
+                    scheduler.optimizer = optimizer
+                    logger.debug("Scheduler optimizer reference updated")
+        
+        # Log the current number of trainable parameters
+        num_trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
+        logger.debug(f"Number of trainable parameters: {num_trainable_params}")
  
         
         
@@ -637,13 +669,7 @@ class BaseModel(nn.Module):
         for epoch in epo_iter:
             
             if unfreezing:
-                new_params = self.unfreeze_schedule(epoch, epochs)
-                logger.debug(f"Unfreezing schedule at epoch {epoch}")
-                if new_params:
-                    logger.debug(f"Unfreezing condition met at epoch {epoch}")
-                    optimizer.add_param_group({"params": new_params})
-                    scheduler.optimizer = optimizer
-                logger.debug(f"Training parameters: {sum(p.numel() for p in self.parameters() if p.requires_grad)}")
+                self.manage_unfreezing(epoch, epochs, optimizer, scheduler, logger)
             
             logger.debug(f"Starting epoch {epoch}/{epochs}")
             train_loss, train_logits, train_labels = self.train_epoch(train_dataloader, optimizer, criterion)
