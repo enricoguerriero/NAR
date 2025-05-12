@@ -24,7 +24,7 @@ class TimeSformer(BaseModel):
         self.processor = AutoImageProcessor.from_pretrained(base_model_id)
         self.backbone = TimesformerForVideoClassification.from_pretrained(base_model_id)
         self.backbone.classifier = nn.Identity()
-        self.backbone.gradient_checkpointing_enable() # Enable gradient checkpointing - save GPU memory
+        # self.backbone.gradient_checkpointing_enable() # Enable gradient checkpointing - save GPU memory
         
         if num_frames != 8:  # 8 = default number of frames for SSV2 pretraining
             self.interpolate_pos_encoding(num_frames=num_frames)
