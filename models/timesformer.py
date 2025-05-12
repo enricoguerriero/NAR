@@ -30,8 +30,8 @@ class TimeSformer(BaseModel):
             self.interpolate_pos_encoding(num_frames=num_frames)
         
         # self.backbone = torch.compile(self.backbone) # speed up training
-        if torch.cuda.device_count() > 1:
-            self.backbone = torch.nn.DataParallel(self.backbone) # Use DataParallel if multiple GPUs are available
+        # if torch.cuda.device_count() > 1:
+        #     self.backbone = torch.nn.DataParallel(self.backbone) # Use DataParallel if multiple GPUs are available
                 
         self.classifier = torch.nn.Linear(config.hidden_size, num_classes, bias=True)
         self.backbone.to(self.device)
