@@ -730,6 +730,7 @@ class BaseModel(nn.Module):
             
             if val_dataloader is not None and val_loss < best_val_loss:
                 best_val_loss = val_loss
+                best_model_wts = copy.deepcopy(self.state_dict())
                 no_improve = 0
                 logger.debug(f"Validation loss improved to {best_val_loss:.4f} at epoch {epoch}")
             else:
@@ -740,7 +741,8 @@ class BaseModel(nn.Module):
                     break
         
         logger.debug(f"Training finished after {epoch} epochs")
-        logger.debug("Saving final model")
+        logger.debug("Saving the best model")
+        self.load_state_dict(best_model_wts)
         self.save_model()
         logger.debug("Final model saved")
         
