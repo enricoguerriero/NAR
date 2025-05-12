@@ -26,6 +26,7 @@ class CFG:
     device       = "cuda" if torch.cuda.is_available() else "cpu"
     debug        = False                     # debug mode (no training)
     seed         = 42                        # random seed
+    threshold    = 0.5                       # probability cut-off for a tag to be “on”
 
 wandb_run = setup_wandb(
     model_name="videollava_timesformer",
@@ -189,7 +190,7 @@ for epoch in range(CFG.epochs):
     train_metrics = model.metric_computation(
         logits=train_logits,
         labels=train_labels,
-        threshold=None
+        threshold=CFG.threshold
     )
 
     # ───────────────  validation  ──────────────────────────────────────────
