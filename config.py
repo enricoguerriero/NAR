@@ -8,7 +8,7 @@ CONFIG = {
     # data specific
     "clip_length": 2,  # seconds
     "overlapping": 0.5,  # proportion of overlap
-    "frame_per_second": 8,  # target FPS
+    "frame_per_second": 4,  # target FPS
     "batch_size_feature": 1, # batch size for feature extraction (low because it runs the vlm)
     
     # VLM specific
@@ -49,7 +49,7 @@ CONFIG = {
         """,
         
     # training specific
-    "batch_size": 2,
+    "batch_size": 8,
     "optimizer": "adamw",
     "learning_rate": 6.515e-05,
     "momentum": 0.9,
