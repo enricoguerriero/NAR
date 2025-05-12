@@ -79,7 +79,8 @@ scheduler   = get_cosine_schedule_with_warmup(
 )
 
 scaler = torch.amp.GradScaler(device = "cuda", enabled=CFG.fp16)
-criterion = nn.BCEWithLogitsLoss()
+pos_weight = torch.tensor([0.19311390817165375, 2.532083511352539, 7.530612468719482, 6.510387420654297])
+criterion = nn.BCEWithLogitsLoss(weight = pos_weight.to(CFG.device))
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -108,7 +109,9 @@ def evaluate():
 
             with torch.amp.autocast(device_type="cuda", enabled=CFG.fp16):
                 logits = model(**{k: batch[k] for k in batch if k != "labels"})
-                loss   = criterion(logits, batch["labels"])
+                logits = logits.float()
+                loss = criterion(logits, batch["labels"].float().to(logits.device))
+
 
             logits_all.append(logits.float().cpu())
             labels_all.append(batch["labels"].float().cpu())
