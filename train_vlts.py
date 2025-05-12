@@ -157,7 +157,7 @@ for epoch in range(CFG.epochs):
     running_loss = 0.0
     train_logits, train_labels = [], []
 
-    for step, batch in tqdm(enumerate(train_dl, 1), desc=f"Training epoch {epoch}", unit="batch"):
+    for batch in tqdm(train_dl, desc=f"Training epoch {epoch}", unit="batch"):
         for k in batch:
             batch[k] = batch[k].to(CFG.device)
 
@@ -178,10 +178,10 @@ for epoch in range(CFG.epochs):
         train_logits.append(logits.detach().float().cpu())
         train_labels.append(batch["labels"].float().cpu())
 
-        if step % 20 == 0:
-            print(f"Epoch {epoch+1}/{CFG.epochs} | "
-                  f"Step {step}/{len(train_dl)} | "
-                  f"Loss {running_loss/step:.4f}")
+        # if step % 20 == 0:
+        #     print(f"Epoch {epoch+1}/{CFG.epochs} | "
+        #           f"Step {step}/{len(train_dl)} | "
+        #           f"Loss {running_loss/step:.4f}")
 
     # ───────────────  aggregate train metrics  ─────────────────────────────
     train_logits = torch.cat(train_logits)
@@ -195,9 +195,9 @@ for epoch in range(CFG.epochs):
 
     # ───────────────  validation  ──────────────────────────────────────────
     val_loss, val_metrics = evaluate()
-    print(f"Epoch {epoch+1}: "
-          f"train loss={train_loss:.4f}  |  val loss={val_loss:.4f}  |  "
-          f"val F1_macro={val_metrics['f1_macro']:.4f}")
+    # print(f"Epoch {epoch+1}: "
+    #       f"train loss={train_loss:.4f}  |  val loss={val_loss:.4f}  |  "
+    #       f"val F1_macro={val_metrics['f1_macro']:.4f}")
 
     # ───────────────  wandb logging  ───────────────────────────────────────
     model.log_wandb(
