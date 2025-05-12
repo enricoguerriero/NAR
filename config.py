@@ -104,5 +104,15 @@ CONFIG = {
     "frame_per_second_0s": 4,  # target FPS
     "batch_size_feature_0s": 1, # batch size for feature extraction (low because it runs the vlm)
     
-    
+    # TimeSformer specific
+    "TimeSformer_learning_rate": 2.283e-05,
+    "TimeSformer_weight_decay": 1.266e-05,
+    "TimeSformer_epochs": 20,
+    "TimeSformer_optimizer": "adam",
+    "TimeSformer_freezing_condition": "partial",
+    "TimeSformer_threshold": 0.326,
+    "TimeSformer_scheduler": "steplr",
+    "TimeSformer_patience": 7,
+    "TimeSformer_batch_size": 8,
+    "TimeSformer_frame_per_second": 4,
 }
