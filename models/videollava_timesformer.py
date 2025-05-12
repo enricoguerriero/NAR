@@ -62,7 +62,8 @@ class VideoLlavaTimeSformer(BaseModel):
 
         # ------------ optional freezing ---------------------------------------
         if freeze_llm:
-            keep_trainable = {"vision_tower.", "mm_projector", "fuse"}
+            # keep_trainable = {"vision_tower.", "mm_projector", "fuse"}
+            keep_trainable = {"mm_projector", "fuse"}
             for n, p in self.backbone.named_parameters():
                 p.requires_grad = any(n.startswith(k) for k in keep_trainable)
 
