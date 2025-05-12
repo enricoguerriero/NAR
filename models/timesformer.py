@@ -36,6 +36,8 @@ class TimeSformer(BaseModel):
         self.classifier = torch.nn.Linear(config.hidden_size, num_classes, bias=True)
         self.backbone.to(self.device)
         self.classifier.to(self.device)
+        for param in self.classifier.parameters():
+            param.requires_grad = True
 
         
     def interpolate_pos_encoding(self, num_frames: int, img_size: int = 224, patch_size: int = 16):

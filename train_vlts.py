@@ -119,7 +119,7 @@ def evaluate():
     logits_all, labels_all = [], []
     val_loss = 0.0
     with torch.no_grad():
-        for batch in val_dl:
+        for batch in tqdm(val_dl, desc="Validation", unit="batch"):
             for k in batch:
                 batch[k] = batch[k].to(CFG.device)
 
