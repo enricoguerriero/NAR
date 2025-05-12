@@ -149,8 +149,9 @@ for epoch in range(CFG.epochs):
 
         with torch.amp.autocast(device_type="cuda", enabled=CFG.fp16):
             logits = model(**{k: batch[k] for k in batch if k != "labels"})
-            loss   = criterion(logits, batch["labels"])
-
+            logits = logits.float()
+            loss = criterion(logits, batch["labels"].float().to(logits.device))
+            
         scaler.scale(loss).backward()
         scaler.unscale_(optimizer)
         nn.utils.clip_grad_norm_(model.parameters(), CFG.max_grad_norm)
