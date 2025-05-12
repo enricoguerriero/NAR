@@ -115,4 +115,10 @@ CONFIG = {
     "TimeSformer_patience": 7,
     "TimeSformer_batch_size": 8,
     "TimeSformer_frame_per_second": 4,
+    
+    # VideoLLaVA specific
+    "VideoLLaVA_frames_per_second": 4,
+    
+    # LLavaNext specific
+    "LLavaNext_frames_per_second": 8,
 }
