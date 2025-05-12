@@ -70,10 +70,15 @@ class LlavaNext(BaseModel):
             output_hidden_states=True,
         )
         
-        last_layer = outputs.hidden_states[-1]
-        pooled = last_layer.mean(dim=1)
-        pooled = pooled.to(dtype=self.classifier[0].weight.dtype)
-        logits = self.classifier(pooled)
+        h = outputs.hidden_states[-1]            
+        video_token_id = self.backbone.config.video_token_index
+        
+        video_mask = (input_ids == video_token_id)
+        
+        pooled_video = (h * video_mask.unsqueeze(-1)).sum(1) / \
+               video_mask.sum(1, keepdim=True).clamp(min=1)
+               
+        logits = self.classifier(pooled_video.float())
         
         if labels is not None and loss_fct is not None:
             loss = loss_fct(logits.float(), labels.float())
@@ -182,8 +187,14 @@ class LlavaNext(BaseModel):
             output_hidden_states=True,
         )
 
-        last_layer = outputs.hidden_states[-1] # (batch, seq_len, hidden_dim)
-        pooled = last_layer.mean(dim=1)  # CLS token representation
-        return pooled.float()
+        h = outputs.hidden_states[-1]            
+        video_token_id = self.backbone.config.video_token_index
+        
+        video_mask = (input_ids == video_token_id)
+        
+        pooled_video = (h * video_mask.unsqueeze(-1)).sum(1) / \
+               video_mask.sum(1, keepdim=True).clamp(min=1)
+               
+        return pooled_video.float()
     
     
