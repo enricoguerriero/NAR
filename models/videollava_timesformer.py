@@ -52,11 +52,11 @@ class VideoLlavaTimeSformer(BaseModel):
         # ---------- Rebuild multimodal projector ----------
         self.backbone.mm_projector = nn.Linear(
             self.backbone.config.mm_hidden_size,
-            self.backbone.config.hidden_size,
+            self.backbone.config.text_config.hidden_size,
             bias=True,
             device=self.device,
         )
-        self.backbone._init_weights(self.backbone.mm_projector.weight)
+        self.backbone._init_weights(self.backbone.mm_projector)
 
         # ---------- Optional freezing ----------
         if freeze_llm:
@@ -65,7 +65,7 @@ class VideoLlavaTimeSformer(BaseModel):
                 p.requires_grad = any(n.startswith(k) for k in keep_trainable)
 
         # ---------- Classification head (late-fusion style) ----------
-        hidden_t = self.backbone.config.hidden_size
+        hidden_t = self.backbone.config.text_config.hidden_size
         self.fuse = nn.Sequential(
             nn.Linear(hidden_t * 2, 512),
             nn.ReLU(),
