@@ -77,7 +77,6 @@ class VideoLlavaTimeSformer(BaseModel):
                 nn.Linear(512, num_classes),
             )
             .to(self.device)
-            .half()
         )
 
         # ------------ print summary -------------------------------------------

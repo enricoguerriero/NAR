@@ -82,6 +82,21 @@ scaler = torch.amp.GradScaler(device = "cuda", enabled=CFG.fp16)
 pos_weight = torch.tensor([0.19311390817165375, 2.532083511352539, 7.530612468719482, 6.510387420654297])
 criterion = nn.BCEWithLogitsLoss(weight = pos_weight.to(CFG.device))
 
+def cast_trainable_to_fp32(model):
+    n_fp16 = 0
+    for n, p in model.named_parameters():
+        if p.requires_grad and p.dtype == torch.float16:
+            p.data = p.data.float()
+            n_fp16 += 1
+    print(f"✓ cast {n_fp16} trainable tensors to fp32")
+
+# --------- optional: un-freeze last 2 vision blocks -------------
+for n, p in model.backbone.vision_tower.named_parameters():
+    if n.startswith(("blocks.10.", "blocks.11.")):
+        p.requires_grad = True
+
+cast_trainable_to_fp32(model)
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 #  4.  DataLoaders
