@@ -116,19 +116,22 @@ class VideoLlavaTimeSformer(BaseModel):
         out = self.backbone(
             **vid_inputs, return_dict=True, output_hidden_states=True
         )
-        h = out.hidden_states[-1]               # (B, seq_len, hidden)
+        
+        h = out.hidden_states[-1]            
+        video_token_id = self.backbone.config.video_token_index
+        
+        video_mask = (input_ids == video_token_id)
+        
+        
+        pooled_video = (h * video_mask.unsqueeze(-1)).sum(1) / \
+               video_mask.sum(1, keepdim=True).clamp(min=1)
 
-        # split tokens
-        n_vid = self.backbone.cfg_num_frames
-        vid_tok = h[:, :n_vid, :].mean(1)       # (B, hidden_t)
-        txt_tok = h[:, n_vid:, :].mean(1)       # (B, hidden_t)
-
+        cls_text = h[:, 0, :]
+        fused = torch.cat([pooled_video, cls_text], dim=-1)
         if self.debug:
-            print(f"[DEBUG] vid_tok shape : {tuple(vid_tok.shape)}")
-            print(f"[DEBUG] txt_tok shape : {tuple(txt_tok.shape)}")
-            print(f"[DEBUG] vid_tok sample: {vid_tok[0, :8].tolist()}")
-
-        fused  = torch.cat([vid_tok, txt_tok], dim=-1)
+            print(f"[DEBUG] pooled_video shape: {tuple(pooled_video.shape)}")
+            print(f"[DEBUG] cls_text shape   : {tuple(cls_text.shape)}")
+            print(f"[DEBUG] fused shape      : {tuple(fused.shape)}")
         logits = self.fuse(fused)               # (B, num_classes)
 
         if self.debug:
