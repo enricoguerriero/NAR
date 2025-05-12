@@ -39,6 +39,7 @@ model = VideoLlavaTimeSformer(
     num_frames=NUM_FRAMES,
     device=DEVICE,
     freeze_llm=True,
+    debug=True
 ).eval()
 
 
