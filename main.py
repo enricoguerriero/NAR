@@ -124,6 +124,7 @@ def main():
         logger.info(f"Patience: {CONFIG.get(f"{model_name}_patience", CONFIG["patience"])}")
         logger.info(f"Epochs: {CONFIG.get(f"{model_name}_epochs", CONFIG["epochs"])}")
         logger.info(f"Threshold: {CONFIG.get(f"{model_name}_threshold", CONFIG["threshold"])}")
+        logger.info(f"Freezing condition: {CONFIG.get(f"{model_name}_freezing_condition", CONFIG["freezing_condition"])}")
         model.train_from_tokens(train_dataloader = train_dataloader,
                     val_dataloader = validation_dataloader,
                     epochs = CONFIG.get(f"{model_name}_epochs", CONFIG["epochs"]),
