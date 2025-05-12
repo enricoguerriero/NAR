@@ -71,7 +71,7 @@ class VideoLlavaTimeSformer(BaseModel):
             nn.ReLU(),
             nn.Dropout(0.1),
             nn.Linear(512, num_classes),
-        ).to(self.device)
+        ).to(self.device).half()
 
     # ------------------------------------------------------------------ #
     #                               forward                              #
