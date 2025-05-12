@@ -192,6 +192,9 @@ for epoch in range(CFG.epochs):
         labels=train_labels,
         threshold=CFG.threshold
     )
+    print(f"Epoch {epoch+1}: "
+          f"  |  train loss={train_loss:.4f}  |  "
+          f"  |  train F1_macro={train_metrics['f1_macro']:.4f}  |  ")
 
     # ───────────────  validation  ──────────────────────────────────────────
     val_loss, val_metrics = evaluate()
@@ -199,6 +202,9 @@ for epoch in range(CFG.epochs):
     #       f"train loss={train_loss:.4f}  |  val loss={val_loss:.4f}  |  "
     #       f"val F1_macro={val_metrics['f1_macro']:.4f}")
 
+    print(f"Epoch {epoch+1}: "
+            f"  |  validation loss={val_loss:.4f}  |  "
+            f"  |  validation F1_macro={val_metrics['f1_macro']:.4f}  |  ")
     # ───────────────  wandb logging  ───────────────────────────────────────
     model.log_wandb(
         wandb_run=wandb_run,
