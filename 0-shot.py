@@ -131,10 +131,6 @@ def main():
     for i, clip in tqdm(enumerate(token_dataset), total=len(token_dataset), desc="Testing clips", unit="clip"):
         
         logger.info("Inspecting clip...")
-        pixel_values = clip.get("pixel_values", None)
-        pixel_values_videos = clip.get("pixel_values_videos", None)
-        input_ids = clip.get("input_ids", None)
-        attention_mask = clip.get("attention_mask", None)
         
         logger.info("Generating answer for clip.")
         answer = model.generate_answer(inputs = clip,

@@ -27,7 +27,7 @@ CONFIG = {
         - Locate the face of the mannequin. This is the key area for identifying some treatments.
 
         3. Detect Medical Treatments
-        If the mannequin is present, identify whether the following treatments are being performed. These treatments can occur individually or at the same time:
+        If the mannequin is present, identify whether the following treatments are being performed. These treatments can occur individually, stimulation can occur at the same time of suction or ventilation:
 
         - Ventilation:
             - A healthworker is holding a ventilation mask over the mannequin's face.
@@ -64,7 +64,7 @@ CONFIG = {
     "freezing_condition": "lora",
     
     # 0 shot specific
-    "prompt_0s": "Describe the scene. Be explicit about the presence of the mannequin and the treatments being performed, if any. Check for ventilation, stimulation, and suction.",
+    "prompt_0s": "Provide a caption for the scene you visualize in the clip. Be explicit about the presence of the mannequin and the treatments being performed, if any. Check for ventilation, stimulation, and suction.",
     "system_message_0s": """
         You are assisting in a medical simulation analysis. A camera is positioned above a table. The simulation involves a mannequin representing a newborn baby, which may or may not be present on the table.
 
@@ -79,7 +79,7 @@ CONFIG = {
         - Locate the face of the mannequin. This is the key area for identifying some treatments.
 
         3. Detect Medical Treatments
-        If the mannequin is present, identify whether the following treatments are being performed. These treatments can occur individually or at the same time:
+        If the mannequin is present, identify whether the following treatments are being performed. These treatments can occur individually, stimulation can occur at the same time of suction or ventilation:
 
         - Ventilation:
             - A healthworker is holding a ventilation mask over the mannequin's face.
@@ -101,7 +101,7 @@ CONFIG = {
         """,
     "clip_length_0s": 2,  # seconds
     "overlapping_0s": 0.5,  # proportion of overlap
-    "frame_per_second_0s": 4,  # target FPS
+    "frame_per_second_0s": 8,  # target FPS
     "batch_size_feature_0s": 1, # batch size for feature extraction (low because it runs the vlm)
     
     # TimeSformer specific
