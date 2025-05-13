@@ -27,17 +27,21 @@ PROJECT_NAME = "NewbornActivityRecognition"
 def objective(trial: optuna.Trial) -> float:
     
     logger.info(f"Trial number: {trial.number}")
-    wandb.init(
-        project=PROJECT_NAME,
-        reinit=True,
-        config={},
-        name=f"optim_trial_{trial.number}"
-    )
+    # wandb.init(
+    #     project=PROJECT_NAME,
+    #     reinit=True,
+    #     config={},
+    #     name=f"optim_trial_{trial.number}"
+    # )
     # Sample hyperparameters
-    lr = trial.suggest_loguniform('learning_rate', 1e-6, 1e-2)
-    weight_decay = trial.suggest_loguniform('weight_decay', 1e-6, 1e-2)
-    optimizer_name = trial.suggest_categorical('optimizer', ['adamw', 'sgd', 'adam'])
-    dropout_rate = trial.suggest_uniform('dropout', 0.0, 0.5)
+    optimizer_name = trial.suggest_categorical('optimizer_name', ['adam', 'sgd', 'adamw'])
+    learning_rate = trial.suggest_float('learning_rate', 1e-6, 1e-2, log = True)
+    weight_decay = trial.suggest_float('weight_decay', 1e-6, 1e-2, log = True)
+    epochs = trial.suggest_int('epochs', 10, 50, step=5)
+    momentum = None
+    if optimizer_name == 'sgd':
+        momentum = trial.suggest_float('momentum', 0.0, 0.99)
+    dropout_rate = trial.suggest_float('dropout', 0.0, 0.5)
     threshold = torch.tensor([
         trial.suggest_float('threshold_1', 0.3, 0.7),
         trial.suggest_float('threshold_2', 0.3, 0.7),
@@ -51,13 +55,6 @@ def objective(trial: optuna.Trial) -> float:
         momentum = None
     epochs = trial.suggest_int('epochs', 3, 21, step=2)
     patience = trial.suggest_int('patience', 3, 8)
-    scheduler_name = trial.suggest_categorical(
-        'scheduler_name', ['steplr', 'cosineannealinglr', 'reduceonplateau']
-    )
-    if scheduler_name == 'steplr':
-        scheduler_patience = trial.suggest_int('scheduler_patience', 1, 5)
-    else:
-        scheduler_patience = 5
     
 
     # Initialize model
@@ -71,15 +68,38 @@ def objective(trial: optuna.Trial) -> float:
         nn.Dropout(dropout_rate),
         nn.Linear(hidden_dim, num_classes)
     ).to(DEVICE)
+    pos_weight = torch.tensor([0.19311390817165375, 2.532083511352539,
+                               7.530612468719482, 6.510387420654297]).to(DEVICE)
 
     # Define criterion and optimizer
-    criterion = model.define_criterion('bce')
+    criterion = model.define_criterion('wbce', pos_weight=pos_weight)
     optimizer = model.define_optimizer(
         optimizer_name=optimizer_name,
-        learning_rate=lr,
+        learning_rate=learning_rate,
         momentum=momentum,
         weight_decay=weight_decay
     )
+
+    scheduler_name = trial.suggest_categorical(
+        'scheduler_name', ['steplr', 'cosineannealinglr', 'reduceonplateau']
+    )
+    step_size = None
+    gamma = None
+    eta_min = None
+    scheduler_patience = None
+    factor = None
+    cooldown = None
+    min_lr = None
+    if scheduler_name == 'steplr':
+        step_size = trial.suggest_int('step_size', 1, 10)
+        gamma = trial.suggest_float('gamma', 0.1, 0.9) 
+    elif scheduler_name == 'cosineannealinglr':
+        eta_min = trial.suggest_float('eta_min', 0.0, 1e-3)
+    elif scheduler_name == 'reduceonplateau':
+        factor = trial.suggest_float('factor', 0.1, 0.9)
+        scheduler_patience = trial.suggest_int('patience', 1, 10)
+        cooldown = trial.suggest_int('cooldown', 0, 5)
+        min_lr = trial.suggest_float('min_lr', 1e-6, 1e-2, log=True)
 
     # Optionally define a scheduler
     scheduler = model.define_scheduler(
@@ -87,23 +107,27 @@ def objective(trial: optuna.Trial) -> float:
         optimizer=optimizer,
         epochs=epochs,
         patience=scheduler_patience,
-        step_size=trial.suggest_int('step_size', 2, 10),
-        gamma=trial.suggest_float('gamma', 0.1, 0.9)
+        step_size=step_size,
+        gamma=gamma,
+        eta_min=eta_min,
+        factor=factor,
+        cooldown=cooldown,
+        min_lr=min_lr
     )
     
-    wandb.config.update({
-        'learning_rate': lr,
-        'weight_decay': weight_decay,
-        'optimizer_name': optimizer_name,
-        'dropout_rate': dropout_rate,
-        'threshold': threshold,
-        'hidden_dim': hidden_dim,
-        'momentum': momentum,
-        'epochs': epochs,
-        'patience': patience,
-        'scheduler_name': scheduler_name,
-        'scheduler_patience': scheduler_patience
-    })
+    # wandb.config.update({
+    #     'learning_rate': learning_rate,
+    #     'weight_decay': weight_decay,
+    #     'optimizer_name': optimizer_name,
+    #     'dropout_rate': dropout_rate,
+    #     'threshold': threshold,
+    #     'hidden_dim': hidden_dim,
+    #     'momentum': momentum,
+    #     'epochs': epochs,
+    #     'patience': patience,
+    #     'scheduler_name': scheduler_name,
+    #     'scheduler_patience': scheduler_patience
+    # })
 
     # Train classifier head
     results = model.train_classifier(
