@@ -80,17 +80,17 @@ def objective(trial: optuna.Trial) -> float:
     ]).to(device)
 
     # Log config to W&B
-    wandb.config.update({
-        'optimizer_name': optimizer_name,
-        'learning_rate': learning_rate,
-        'epochs': epochs,
-        'weight_decay': weight_decay,
-        'criterion_name': criterion_name,
-        'threshold': threshold,
-        'scheduler_name': scheduler_name,
-        'patience': patience,
-        'freezing_condition': freezing_condition,
-    })
+    # wandb.config.update({
+    #     'optimizer_name': optimizer_name,
+    #     'learning_rate': learning_rate,
+    #     'epochs': epochs,
+    #     'weight_decay': weight_decay,
+    #     'criterion_name': criterion_name,
+    #     'threshold': threshold,
+    #     'scheduler_name': scheduler_name,
+    #     'patience': patience,
+    #     'freezing_condition': freezing_condition,
+    # })
 
     # Model initialization
     model = TimeSformer(device=device).to(device)
