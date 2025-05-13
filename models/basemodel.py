@@ -820,14 +820,14 @@ class BaseModel(nn.Module):
             optimizer.zero_grad()
             inputs = {k: v.to(self.device) for k, v in batch.items()}
             labels = inputs.pop("labels")
-            print(f"labels: {labels}", flush=True)
-            print(f"inputs: {inputs}", flush=True)
+            # print(f"labels: {labels}", flush=True)
+            # print(f"inputs: {inputs}", flush=True)
             with autocast(device_type='cuda'):
                 outputs = self.forward_classifier(**inputs, labels = labels, loss_fct=loss_fct)
             loss = outputs["loss"]
             logits = outputs["logits"]
-            print(f"loss: {loss}", flush=True)
-            print(f"logits: {logits}", flush=True)
+            # print(f"loss: {loss}", flush=True)
+            # print(f"logits: {logits}", flush=True)
             labels_list.append(labels.cpu())
             logits_list.append(logits.cpu())
             
