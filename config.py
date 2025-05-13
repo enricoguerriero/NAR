@@ -59,7 +59,7 @@ CONFIG = {
     "scheduler_patience": 1,
     "patience": 7,
     "epochs": 15,
-    "threshold": 0.3,
+    "threshold": 0.5,
     "num_workers": 0,
     "freezing_condition": "lora",
     
