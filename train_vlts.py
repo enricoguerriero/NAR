@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from transformers import get_cosine_schedule_with_warmup
 from utils import setup_wandb
 from tqdm import tqdm
+import copy
 
 from models.videollava_timesformer import VideoLlavaTimeSformer
 
@@ -17,7 +18,7 @@ class CFG:
     root         = "data/tokens/VideoLLaVA"  # path to train/val folders
     num_frames   = 8                         # number of frames per video
     num_classes  = 4                         # number of possible tags
-    batch_size   = 8                        # batch size
+    batch_size   = 8                         # batch size
     epochs       = 10                        # number of epochs
     lr_head      = 1e-5                      # learning rate for head
     warmup       = 0.1                       # warmup ratio
@@ -27,6 +28,7 @@ class CFG:
     debug        = False                     # debug mode (no training)
     seed         = 42                        # random seed
     threshold    = 0.5                       # probability cut-off for a tag to be “on”
+    patience     = 3                         # early stopping patience
 
 wandb_run = setup_wandb(
     model_name="videollava_timesformer",
@@ -124,7 +126,7 @@ def evaluate():
                 batch[k] = batch[k].to(CFG.device)
 
             with torch.amp.autocast(device_type="cuda", enabled=CFG.fp16):
-                logits = model(**{k: batch[k] for k in batch if k != "labels"})
+                logits = model.forward(**{k: batch[k] for k in batch if k != "labels"})
                 logits = logits.float()
                 loss = criterion(logits, batch["labels"].float().to(logits.device))
 
@@ -152,7 +154,10 @@ def evaluate():
 
 
 best_map = 0.0
+best_val_loss = float("inf")
+no_improve = 0
 for epoch in range(CFG.epochs):
+    print(f"Epoch {epoch+1}/{CFG.epochs} | ")
     model.train()
     running_loss = 0.0
     train_logits, train_labels = [], []
@@ -164,7 +169,7 @@ for epoch in range(CFG.epochs):
         optimizer.zero_grad(set_to_none=True)
 
         with torch.amp.autocast(device_type="cuda", enabled=CFG.fp16):
-            logits = model(**{k: batch[k] for k in batch if k != "labels"})
+            logits = model.forward(**{k: batch[k] for k in batch if k != "labels"})
             loss = criterion(logits, batch["labels"].float().to(logits.device))
             
         scaler.scale(loss).backward()
@@ -215,8 +220,73 @@ for epoch in range(CFG.epochs):
         val_metrics=val_metrics
     )
 
+    model.save_checkpoint(
+        epoch=epoch,
+        optimizer=optimizer,
+        scheduler=scheduler,
+    )
     # ───────────────  model checkpoint  ────────────────────────────────────
     if val_metrics["f1_macro"] > best_map:
         best_map = val_metrics["f1_macro"]
-        torch.save(model.state_dict(), "best_videollava_timesformer.pth")
-        print("  ✔ Saved new best model\n")
+        best_model_wts = copy.deepcopy(model.state_dict())
+        print(f"New best f1 macro: {best_map}\n")
+        no_improve = 0
+    else:
+        no_improve += 1
+        print(f"No improvement in f1 macro: {no_improve} epochs\n")
+        if no_improve > CFG.patience:
+            print("Early stopping...")
+            break
+        
+# ───────────────  save best model  ────────────────────────────────────────
+print("Finish training, saving best model...")
+model.load_state_dict(best_model_wts)
+model.save_model()
+
+
+# ────────────────  test the model  ──────────────────────────────────────────────
+
+def test():
+    model.eval()
+    test_logits, test_labels = [], []
+    test_loss = 0.0
+    with torch.no_grad():
+        for batch in tqdm(test_dl, desc="Testing", unit="batch"):
+            for k in batch:
+                batch[k] = batch[k].to(CFG.device)
+
+            with torch.amp.autocast(device_type="cuda", enabled=CFG.fp16):
+                logits = model.forward(**{k: batch[k] for k in batch if k != "labels"})
+                loss = criterion(logits, batch["labels"].float().to(logits.device))
+
+            test_logits.append(logits.float().cpu())
+            test_labels.append(batch["labels"].float().cpu())
+            test_loss += loss.item()
+    test_logits = torch.cat(test_logits)
+    test_labels = torch.cat(test_labels)
+    test_loss  /= len(test_dl)
+    test_metrics = model.metric_computation(
+        logits=test_logits,
+        labels=test_labels,
+        threshold=CFG.threshold
+    )
+    return test_loss, test_metrics
+    
+test_ds = TokenDataset(os.path.join(CFG.root, "test", "2sec_4fps"))
+test_dl = DataLoader(test_ds, batch_size=CFG.batch_size,
+                      shuffle=False, collate_fn=model.collate_fn_tokens,
+                      num_workers=2)
+
+test_loss, test_metrics = test()
+print(f"Test loss: {test_loss:.4f}")
+print(f"Test F1_macro: {test_metrics['f1_macro']:.4f}")
+model.log_test_wandb(
+    wandb_run=wandb_run,
+    test_loss=test_loss,
+    test_metrics=test_metrics
+)
+wandb_run.finish()
+# ──────────────────────────────────────────────────────────────────────────────
+#  End of script
+# ──────────────────────────────────────────────────────────────────────────────
+print("End of script, bye bye!")
