@@ -146,17 +146,28 @@ class BaseModel(nn.Module):
                          gamma: float = 0.1,
                          eta_min: float = 0,
                          factor: float = 0.1,
-                         mode: str = "min"):
+                         mode: str = "min",
+                         cooldown: int = 0,
+                         min_lr: float = 1e-6):
         """
         Defines the scheduler for the model.
         By now you can choose between StepLR and CosineAnnealingLR.
         """
         if scheduler_name == "steplr":
-            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 
+                                                        step_size=step_size, 
+                                                        gamma=gamma)
         elif scheduler_name == "cosineannealinglr":
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=eta_min)
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 
+                                                                   T_max=epochs, 
+                                                                   eta_min=eta_min)
         elif scheduler_name == "reduceonplateau":
-            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode=mode, factor=factor, patience=patience)
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                                   mode=mode, 
+                                                                   factor=factor, 
+                                                                   patience=patience,
+                                                                   cooldown=cooldown,
+                                                                   min_lr=min_lr)
         else:
             raise ValueError(f"Scheduler {scheduler_name} not available")
         return scheduler
@@ -630,6 +641,13 @@ class BaseModel(nn.Module):
         threshold: float | torch.Tensor = 0.5,
         scheduler_name: str = None,
         scheduler_patience: int = 3,
+        step_size: int = 5, 
+        gamma: float = 0.1,
+        eta_min: float = 0,
+        factor: float = 0.1,
+        mode: str = "min",
+        cooldown: int = 0,
+        min_lr: float = 1e-6,
         patience: int = 3,
         show_progress: bool = True,
         prior_probability: Tensor = None,
@@ -656,7 +674,14 @@ class BaseModel(nn.Module):
             scheduler = self.define_scheduler(scheduler_name = scheduler_name,
                                               optimizer = optimizer,
                                               epochs = epochs,
-                                              patience = scheduler_patience)
+                                              patience = scheduler_patience,
+                                              step_size = step_size,
+                                              gamma = gamma,
+                                              eta_min = eta_min,
+                                              factor = factor,
+                                              mode = mode,
+                                              cooldown = cooldown,
+                                              min_lr = min_lr)
             logger.debug(f"Scheduler defined: {scheduler_name}")
         else:
             scheduler = None

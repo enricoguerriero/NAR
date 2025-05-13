@@ -27,21 +27,21 @@ def objective(trial: optuna.Trial) -> float:
     Returns the validation macro F1 score.
     """
     logger.info(f"Trial number: {trial.number}")
-    wandb.init(
-        project=PROJECT_NAME,
-        reinit=True,
-        config={},
-        name=f"TS_optim_trial_{trial.number}"
-    )
+    # wandb.init(
+    #     project=PROJECT_NAME,
+    #     reinit=True,
+    #     config={},
+    #     name=f"TS_optim_trial_{trial.number}"
+    # )
 
     # Hyperparameter sampling
     optimizer_name = trial.suggest_categorical('optimizer_name', ['adam', 'sgd', 'adamw'])
-    learning_rate = trial.suggest_loguniform('learning_rate', 1e-5, 1e-2)
-    weight_decay = trial.suggest_loguniform('weight_decay', 1e-6, 1e-2)
+    learning_rate = trial.suggest_float('learning_rate', 1e-6, 1e-2, log = True)
+    weight_decay = trial.suggest_float('weight_decay', 1e-6, 1e-2, log = True)
     epochs = trial.suggest_int('epochs', 10, 50, step=5)
     momentum = None
-    if optimizer_name in ('sgd', 'adamw'):
-        momentum = trial.suggest_uniform('momentum', 0.0, 0.99)
+    if optimizer_name == 'sgd':
+        momentum = trial.suggest_float('momentum', 0.0, 0.99)
 
     criterion_name = "wbce"
     pos_weight = torch.tensor([0.19311390817165375, 2.532083511352539,
@@ -53,7 +53,25 @@ def objective(trial: optuna.Trial) -> float:
     scheduler_name = trial.suggest_categorical(
         'scheduler_name', ['steplr', 'cosineannealinglr', 'reduceonplateau']
     )
-    scheduler_patience = trial.suggest_int('scheduler_patience', 1, 5)
+    step_size = None
+    gamma = None
+    T_max = None
+    eta_min = None
+    scheduler_patience = None
+    factor = None
+    cooldown = None
+    min_lr = None
+    if scheduler_name == 'steplr':
+        step_size = trial.suggest_int('step_size', 1, 10)
+        gamma = trial.suggest_float('gamma', 0.1, 0.9) 
+    elif scheduler_name == 'cosineannealinglr':
+        T_max = trial.suggest_int('T_max', 1, 10)
+        eta_min = trial.suggest_float('eta_min', 0.0, 1e-3)
+    elif scheduler_name == 'reduceonplateau':
+        factor = trial.suggest_float('factor', 0.1, 0.9)
+        scheduler_patience = trial.suggest_int('patience', 1, 10)
+        cooldown = trial.suggest_int('cooldown', 0, 5)
+        min_lr = trial.suggest_float('min_lr', 1e-6, 1e-2, log=True)
     patience = trial.suggest_int('patience', 3, 8)
     freezing_condition = trial.suggest_categorical('freezing_condition', ['none', 'all', 'partial'])
 
@@ -63,13 +81,11 @@ def objective(trial: optuna.Trial) -> float:
         'learning_rate': learning_rate,
         'epochs': epochs,
         'weight_decay': weight_decay,
-        'momentum': momentum,
         'criterion_name': criterion_name,
         'threshold': threshold,
         'scheduler_name': scheduler_name,
-        'scheduler_patience': scheduler_patience,
         'patience': patience,
-        'freezing_condition': freezing_condition
+        'freezing_condition': freezing_condition,
     })
 
     # Model initialization
@@ -89,16 +105,24 @@ def objective(trial: optuna.Trial) -> float:
         threshold=threshold,
         scheduler_name=scheduler_name,
         scheduler_patience=scheduler_patience,
+        step_size=step_size,
+        gamma=gamma,
+        T_max=T_max,
+        eta_min=eta_min,
+        cooldown=cooldown,
+        factor=factor,
+        min_lr=min_lr,
         patience=patience,
         show_progress=False,
         prior_probability=prior_probability,
-        logger=logger
+        logger=logger,
+        freezing_condition=freezing_condition
     )
 
     # Log and return metric
     val_f1 = results['val_metrics']['f1_macro']
     wandb.log({'val_f1_macro': val_f1})
-    wandb.finish()
+    # wandb.finish()
     return val_f1
 
 
