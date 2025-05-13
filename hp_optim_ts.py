@@ -55,7 +55,6 @@ def objective(trial: optuna.Trial) -> float:
     )
     step_size = None
     gamma = None
-    T_max = None
     eta_min = None
     scheduler_patience = None
     factor = None
@@ -65,7 +64,6 @@ def objective(trial: optuna.Trial) -> float:
         step_size = trial.suggest_int('step_size', 1, 10)
         gamma = trial.suggest_float('gamma', 0.1, 0.9) 
     elif scheduler_name == 'cosineannealinglr':
-        T_max = trial.suggest_int('T_max', 1, 10)
         eta_min = trial.suggest_float('eta_min', 0.0, 1e-3)
     elif scheduler_name == 'reduceonplateau':
         factor = trial.suggest_float('factor', 0.1, 0.9)
@@ -107,7 +105,6 @@ def objective(trial: optuna.Trial) -> float:
         scheduler_patience=scheduler_patience,
         step_size=step_size,
         gamma=gamma,
-        T_max=T_max,
         eta_min=eta_min,
         cooldown=cooldown,
         factor=factor,
