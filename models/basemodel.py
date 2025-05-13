@@ -418,13 +418,13 @@ class BaseModel(nn.Module):
         truths = truths.cpu().numpy()
 
 
-        print("Truth shape:", truths.shape, flush=True)
-        print("Pred shape:", preds.shape, flush=True)
-        print("Unique truths:", np.unique(truths), flush=True)
-        print("Unique preds:", np.unique(preds), flush=True)
-        print("  - total val samples:", truths.shape[0], flush=True)
-        print("  - sum of preds per class:", preds.sum(axis=0), flush=True)
-        print("  - sum of truths per class:", truths.sum(axis=0), flush=True)
+        # print("Truth shape:", truths.shape, flush=True)
+        # print("Pred shape:", preds.shape, flush=True)
+        # print("Unique truths:", np.unique(truths), flush=True)
+        # print("Unique preds:", np.unique(preds), flush=True)
+        # print("  - total val samples:", truths.shape[0], flush=True)
+        # print("  - sum of preds per class:", preds.sum(axis=0), flush=True)
+        # print("  - sum of truths per class:", truths.sum(axis=0), flush=True)
         
         TP = ((preds == 1) & (truths == 1)).sum(axis=0)
         FP = ((preds == 1) & (truths == 0)).sum(axis=0)

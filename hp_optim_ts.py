@@ -48,7 +48,7 @@ def objective(trial: optuna.Trial) -> float:
                                7.530612468719482, 6.510387420654297]).to(device)
     prior_probability = torch.tensor([0.8381429314613342, 0.2831190228462219,
                                       0.11722487956285477, 0.1331489235162735]).to(device)
-    threshold = trial.suggest_float('threshold', 0.3, 0.7)
+    # threshold = trial.suggest_float('threshold', 0.3, 0.7)
 
     scheduler_name = trial.suggest_categorical(
         'scheduler_name', ['steplr', 'cosineannealinglr', 'reduceonplateau']
@@ -72,6 +72,12 @@ def objective(trial: optuna.Trial) -> float:
         min_lr = trial.suggest_float('min_lr', 1e-6, 1e-2, log=True)
     patience = trial.suggest_int('patience', 3, 8)
     freezing_condition = trial.suggest_categorical('freezing_condition', ['none', 'all', 'partial'])
+    threshold = torch.tensor([
+        trial.suggest_float('threshold_1', 0.3, 0.7),
+        trial.suggest_float('threshold_2', 0.3, 0.7),
+        trial.suggest_float('threshold_3', 0.3, 0.7),
+        trial.suggest_float('threshold_4', 0.3, 0.7)
+    ]).to(device)
 
     # Log config to W&B
     wandb.config.update({
