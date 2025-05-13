@@ -379,7 +379,7 @@ class BaseModel(nn.Module):
         Compute TP/FP/FN/TN and derived metrics for a multi-label task.
         """
         if threshold is None:
-            thr = self.calibrated_thresholds if self.calibrated_thresholds is not None else 0.5
+            thr = 0.5
         else:
             thr = threshold
 
