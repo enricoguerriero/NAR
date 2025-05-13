@@ -17,7 +17,7 @@ import wandb
 # Device setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 PROJECT_NAME = "NewbornActivityRecognition"
-DB_PATH = "sqlite:///optuna_newborn.db"  # Path to persistent storage
+DB_PATH = "sqlite:///hp_opt/TimeSformer/optuna_newborn.db"  # Path to persistent storage
 STUDY_NAME = "newborn_activity_recognition"
 
 
