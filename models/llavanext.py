@@ -198,3 +198,30 @@ class LlavaNext(BaseModel):
         return pooled_video.float()
     
     
+    @torch.no_grad()
+    def generate_answer(
+        self,
+        inputs,
+        max_new_tokens: int = 128,
+        **generate_kwargs,
+    ) -> str:
+        """
+        Generate an answer from the model.
+        """
+        pixel_values_videos = inputs["pixel_values_videos"].to(self.device)
+        input_ids = inputs["input_ids"].to(self.device)
+        attention_mask = inputs["attention_mask"].to(self.device)
+        
+        # Generate
+        out = self.backbone.generate(
+            pixel_values_videos=pixel_values_videos,
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            max_new_tokens=max_new_tokens,
+            **generate_kwargs
+        )
+        
+        # Decode the generated tokens
+        answer = self.processor.batch_decode(out, skip_special_tokens=True)[0]
+        
+        return answer.split("ASSISTANT:")[-1].strip()
