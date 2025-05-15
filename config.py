@@ -49,9 +49,9 @@ CONFIG = {
         """,
         
     # training specific
-    "batch_size": 64,
+    "batch_size": 128,
     "optimizer": "adamw",
-    "learning_rate": 0.0005,
+    "learning_rate": 0.0001,
     "momentum": 0.9,
     "weight_decay": 0.0002,
     "criterion": "wbce",
