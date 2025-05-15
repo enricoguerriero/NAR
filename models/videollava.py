@@ -38,7 +38,7 @@ class VideoLlava(BaseModel):
 
         hidden_size = self.backbone.config.text_config.hidden_size
         self.classifier = nn.Sequential(
-            nn.Linear(hidden_size, 512),
+            nn.Linear(hidden_size * 2, 512),
             nn.ReLU(),
             nn.Dropout(0.1),
             nn.Linear(512, num_classes)
@@ -66,10 +66,10 @@ class VideoLlava(BaseModel):
         pooled_video = (h * video_mask.unsqueeze(-1)).sum(1) / \
                video_mask.sum(1, keepdim=True).clamp(min=1)
         
-        # cls_text = h[:, 0, :]  # context (to check if keep it or not)
-        # fused = torch.cat([pooled_video, cls_text], dim=-1)
+        cls_text = h[:, 0, :]  # context (to check if keep it or not)
+        fused = torch.cat([pooled_video, cls_text], dim=-1)
         # if doing this, need to change the classifier to accept 2 * hidden_size
-        fused = pooled_video
+        # fused = pooled_video
         
         logits    = self.classifier(fused.float())
         
