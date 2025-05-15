@@ -115,7 +115,7 @@ class ResuscitationVideoDataset(Dataset):
         
         # -------------- convert to list[PIL.Image] for the processor ----------- #
         # read_video → T×H×W×C  ;  PIL expects H×W×C
-        frames: List[Image.Image] = [to_pil_image(frame) for frame in video]
+        frames: List[Image.Image] = [to_pil_image(frame.permute(2, 0, 1)) for frame in video]
         
         if self.prompt is not None:
             out = self.processor(
