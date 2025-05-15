@@ -21,7 +21,7 @@ loader = DataLoader(
 )
 
 for batch in loader:
-    print(batch["pixel_values"].shape)  # (4, 64, 3, H, W)
+    print(batch["pixel_values_videos"].shape)  # (4, 64, 3, H, W)
     print(batch["input_ids"].shape)     # (4, seq_len)
     print(batch["labels"].shape)        # (4, 4)
     break
