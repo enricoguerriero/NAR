@@ -38,9 +38,9 @@ class VideoLlava(BaseModel):
 
         hidden_size = self.backbone.config.text_config.hidden_size
         self.classifier = nn.Sequential(
-            nn.Linear(hidden_size, 512),
+            nn.Linear(hidden_size, 1024),
             nn.ReLU(),
-            nn.Linear(512, 512),
+            nn.Linear(1024, 512),
             nn.ReLU(),
             nn.Dropout(0.1),
             nn.Linear(512, num_classes)

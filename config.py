@@ -49,19 +49,20 @@ CONFIG = {
         """,
         
     # training specific
-    "batch_size": 8,
+    "batch_size": 64,
     "optimizer": "adamw",
-    "learning_rate": 6.515e-05,
+    "learning_rate": 0.0005,
     "momentum": 0.9,
-    "weight_decay": 1.413e-06,
+    "weight_decay": 0.0002,
     "criterion": "wbce",
-    "scheduler": "reduceonplateau",
+    "scheduler": "cosineannealinglr",
     "scheduler_patience": 1,
-    "patience": 7,
-    "epochs": 15,
+    "patience": 3,
+    "epochs": 45,
     "threshold": 0.5,
     "num_workers": 0,
     "freezing_condition": "lora",
+    "eta_min": 0.001,
     
     # 0 shot specific
     "prompt_0s": "Provide a caption for the scene you visualize in the clip. Be explicit about the presence of the mannequin and the treatments being performed, if any. Check for ventilation, stimulation, and suction.",
