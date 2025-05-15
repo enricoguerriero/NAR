@@ -100,7 +100,7 @@ class ResuscitationVideoDataset(Dataset):
         labels = self._labels[idx]
 
         # (T×H×W×C, audio, info)
-        video, _, _ = read_video(str(path), **self.vr_kwargs)  # uint8, 0-255
+        video, _, _ = read_video(str(path), pts_unit='sec', **self.vr_kwargs)  # uint8, 0-255
         T = video.shape[0]
         
         if self.n_frames is not None and T != self.n_frames:
