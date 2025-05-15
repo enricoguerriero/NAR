@@ -8,7 +8,7 @@ processor = VideoLlavaProcessor.from_pretrained("LanguageBind/Video-LLaVA-7B-hf"
 prompt = "SYSTEM: check the video. USER:<video> WHat is happening in the video? Answer with a list of events. ASSISTANT:"
 
 ds  = ResuscitationVideoDataset(
-    root="/data/clips/test",
+    root="data/clips/test",
     n_frames=8,
     processor=processor,
     prompt=prompt,
