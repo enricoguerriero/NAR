@@ -1,23 +1,23 @@
 from transformers import AutoTokenizer, AutoProcessor
 from torch.utils.data import DataLoader
 
-from data.slowfast_dataset import SlowFastDataset, build_collate_fn
+from data.clip_dataset import ResuscitationVideoDataset
+from transformers import VideoLlavaProcessor
 
-tokenizer  = AutoTokenizer.from_pretrained("llava-hf/llava-1.5-7b-hf")   # example
-processor  = AutoProcessor.from_pretrained("ShiLab/slowfast-llava-visual")  # example
+processor = VideoLlavaProcessor.from_pretrained("LanguageBind/Video-LLaVA-7B-hf")
+prompt = "SYSTEM: check the video. USER:<video> WHat is happening in the video? Answer with a list of events. ASSISTANT:"
 
-ds  = SlowFastDataset(
+ds  = ResuscitationVideoDataset(
     root_dir="/data/clips/test",
-    tokenizer=tokenizer,
+    n_frames=8,
     processor=processor,
-    n_frames=64,
-)
+    prompt=prompt,
+    )
 loader = DataLoader(
     ds,
     batch_size=4,
     shuffle=True,
-    num_workers=4,
-    collate_fn=build_collate_fn(tokenizer),
+    num_workers=4
 )
 
 for batch in loader:

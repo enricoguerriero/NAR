@@ -51,10 +51,11 @@ class ResuscitationVideoDataset(Dataset):
     def __init__(
         self,
         root: str | Path,
-        processor,
+        n_frames: int = 8,
         clip_len: Optional[int] = None,
         video_reader_kwargs: Optional[dict] = None,
-        promtpt: Optional[str] = None
+        processor: Optional[Callable] = None,
+        prompt: Optional[str] = None,
     ) -> None:
         """
         Parameters
@@ -70,9 +71,9 @@ class ResuscitationVideoDataset(Dataset):
             Extra kwargs forwarded to `torchvision.io.read_video`.
         """
         self.root = Path(root).expanduser()
-        self.processor = processor
         self.clip_len = clip_len
         self.vr_kwargs = video_reader_kwargs or {}
+        self.n_frames = n_frames
 
         self.video_paths: List[Path] = sorted(
             p for p in self.root.rglob("*") if p.suffix.lower() in self._VIDEO_EXTS
@@ -81,7 +82,9 @@ class ResuscitationVideoDataset(Dataset):
             raise RuntimeError(f"No videos with extensions {self._VIDEO_EXTS} found in {self.root}")
 
         self._labels = [self._parse_labels(p.name) for p in self.video_paths]
-        self.prompt = promtpt
+        
+        self.processor = processor
+        self.prompt = prompt
 
     # ------------------------------- Dataset API ------------------------------ #
 
@@ -98,27 +101,33 @@ class ResuscitationVideoDataset(Dataset):
 
         # (T×H×W×C, audio, info)
         video, _, _ = read_video(str(path), **self.vr_kwargs)  # uint8, 0-255
-
-        if self.clip_len is not None and self.clip_len < video.shape[0]:
-            max_start = video.shape[0] - self.clip_len
-            start = torch.randint(low=0, high=max_start + 1, size=(1,)).item()
-            video = video[start : start + self.clip_len]
-
+        T = video.shape[0]
+        
+        if self.n_frames is not None and T != self.n_frames:
+            indices = torch.linspace(0, T - 1, steps=self.n_frames).long()
+        else:
+            pad = self.n_frames - T
+            indices = torch.cat([
+                torch.arange(T),
+                torch.full((pad,), T - 1, dtype=torch.long)
+            ])
+        video = video[indices]
+        
         # -------------- convert to list[PIL.Image] for the processor ----------- #
         # read_video → T×H×W×C  ;  PIL expects H×W×C
         frames: List[Image.Image] = [to_pil_image(frame) for frame in video]
-
-        # ------------------------- call the processor -------------------------- #
-        # Most processors accept **list of PIL images**; we enforce PT tensors.
-        # You can pass extra kwargs here (e.g. num_frames) if your processor wants them.
-        # For models that require a prompt, cases are differentiated:
         
-        proc_out = self.processor(
-            frames,
-            return_tensors="pt",
-        )
-
-        # Attach labels (float tensor) so a standard HF data collator works.
-        proc_out["labels"] = labels
-
-        return proc_out
+        if self.prompt is not None:
+            out = self.processor(
+                videos = frames,
+                text = self.prompt,
+                return_tensors="pt",
+            )
+            frames = out["pixel_values_videos"].squeeze(0)
+        else:
+            proc_out = self.processor(frames, return_tensors="pt")
+            frames = proc_out["pixel_values"].squeeze(0)
+        
+        out["labels"] = labels  
+        
+        return out
