@@ -54,7 +54,7 @@ class LlavaNext34(LlavaNext):
         #     nn.ReLU(),
         #     nn.Linear(512, num_classes)
         # ).to(self.device)
-        self.classifier = nn.Linear(hidden_size, num_classes, bias=True).to(self.device)
+        self.classifier = nn.Linear(hidden_size*2, num_classes, bias=True).to(self.device)
         
         for name, param in self.backbone.named_parameters():
             param.requires_grad = False
