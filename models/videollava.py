@@ -45,7 +45,7 @@ class VideoLlava(BaseModel):
         #     nn.Dropout(0.1),
         #     nn.Linear(512, num_classes)
         # ).to(self.device)
-        self.classifier = nn.Linear(hidden_size, num_classes, bias=True).to(self.device)
+        self.classifier = nn.Linear(hidden_size*2, num_classes, bias=True).to(self.device)
         
         for name, param in self.backbone.named_parameters():
             param.requires_grad = False
@@ -69,10 +69,10 @@ class VideoLlava(BaseModel):
         pooled_video = (h * video_mask.unsqueeze(-1)).sum(1) / \
                video_mask.sum(1, keepdim=True).clamp(min=1)
         
-        # cls_text = h[:, 0, :]  # context (to check if keep it or not)
-        # fused = torch.cat([pooled_video, cls_text], dim=-1)
+        cls_text = h[:, 0, :]  # context (to check if keep it or not)
+        fused = torch.cat([pooled_video, cls_text], dim=-1)
         # if doing this, need to change the classifier to accept 2 * hidden_size
-        fused = pooled_video
+        # fused = pooled_video
         
         logits    = self.classifier(fused.float())
         
@@ -199,8 +199,11 @@ class VideoLlava(BaseModel):
         
         pooled = (h * video_mask.unsqueeze(-1)).sum(1) / \
                video_mask.sum(1, keepdim=True).clamp(min=1)
+        cls_text = h[:, 0, :]  # context (to check if keep it or not)
+        fused = torch.cat([pooled, cls_text], dim=-1)
         
-        return pooled.float()
+        
+        return fused.float()
  
     @torch.no_grad()
     def generate_answer(
